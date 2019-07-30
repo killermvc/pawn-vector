@@ -37,6 +37,7 @@ You can `#define` both before including the package to change these values
 * `Vec:Vec_CreateVector`
 Creates a new vector.
   **parameters:**
+  
   * `capacity = VEC_DEFAULT_CAPACITY`
     Size (in cells) of the underlying array
   * `bool:ordered = false`
@@ -44,6 +45,7 @@ Creates a new vector.
 
 * `Vec:Vec_CreateVectorFromArray`
 Creates a new vector and initializes it with the values stored in an array.
+
   **parameters:**
   * `const arr[]`
     the array to copy the data from
@@ -56,24 +58,28 @@ Creates a new vector and initializes it with the values stored in an array.
 
 * `Vec_GetLength`
   Returns the number of elements appended to the vector.
+  
   **parameters:**
   * `Vec:vec`
     the vector to get length from.
 
 * `Vec_GetCapacity`
   Returns the capacity of the vector.
-  vparameters:**
+  
+  **parameters:**
   * `Vec:vec`
     the vector to get length from.
 
 * `bool:Vec_IsOrdered`
   Returns if the vector is ordered or not.
+  
   **parameters:**
   * `Vec:vec`
     the vector to get length from.
 
 * `Vec_Resize`
   changes the capacity of the vector.
+  
   **parameters:**
   * `Vec:vec`
     the vector to resize.
@@ -82,6 +88,7 @@ Creates a new vector and initializes it with the values stored in an array.
 
 * `Vec_Append`
   appends a value to the end of the vector.
+  
   **parameters:**
   * `Vec:vec`
     the vector to append to.
@@ -90,6 +97,7 @@ Creates a new vector and initializes it with the values stored in an array.
 
 * `Vec_AppendArray`
   appends all the values in the array to the end of the vector.
+  
   **parameters:**
   * `Vec:vec`
     the vector to append to.
@@ -100,6 +108,7 @@ Creates a new vector and initializes it with the values stored in an array.
 
 * `Vec_GetValue`
   reads a value from the vector.
+  
   **parameters:**
   * `Vec:vec`
     the vector to get the value from.
@@ -108,6 +117,7 @@ Creates a new vector and initializes it with the values stored in an array.
 
 * `Vec_SetValue`
   reads a value from the vector
+  
   **parameters:**
   * `Vec:vec`
     the vector to set the value to.
@@ -127,6 +137,7 @@ Creates a new vector and initializes it with the values stored in an array.
 
 * `Vec_Delete`
     deletes a vector and frees the memory
+    
     **parameters:**
   * `Vec:vec`
     the vector to delete.
