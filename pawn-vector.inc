@@ -183,10 +183,14 @@ stock bool:Vec_IsOrdered(Vec:vec) {
 }
 
 stock Vec_Resize(Vec:vec, newSize) {
+    if(newSize < Vec_GetLength(vec)) {
+        return 0;
+    }
     //resize the alloc of the vec
     new Alloc:arr = Vec_internalResize(Vec_GetVecAllocSlot(vec), newSize,  Vec_GetLength(vec));
     //update the allocated data id for the vector
     mset(Vec_vectorSlot, _:vec, _:arr);
+    return 1;
 }
 
 stock Vec_Append(Vec:vec, value) {
