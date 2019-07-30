@@ -1,0 +1,23 @@
+{
+	"user": "killermvc",
+	"repo": "pawn-vector",
+	"entry": "test.pwn",
+	"output": "test.amx",
+	"dependencies": [
+		"sampctl/samp-stdlib",
+		"pawn-lang/YSI-Includes"
+	],
+	"builds": [
+		{
+			"name": "dev",
+			"version": "3.10.8"
+		}
+	],
+	"runtime": {
+		"version": "0.3.7",
+		"mode": "main",
+		"echo": "-",
+		"rcon_password": "password",
+		"port": 7777
+	}
+}
