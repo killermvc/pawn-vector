@@ -171,18 +171,37 @@ stock Vec:Vec_CreateVectorFromArray(const arr[], arrSize, capacity = VEC_DEFAULT
 }
 
 stock Vec_GetLength(Vec:vec) {
+    if(!IsValidVec(vec)) {
+        return 0;
+    }
     return mget(Vec_vectorLength, _:vec);
 }
 
 stock Vec_GetCapacity(Vec:vec) {
+    if(!IsValidVec(vec)) {
+        return 0;
+    }
     return Malloc_SlotSize(mget(Vec_vectorSlot, _:vec));
 }
 
 stock bool:Vec_IsOrdered(Vec:vec) {
+    if(!IsValidVec(vec)) {
+        return 0;
+    }
     return bool:mget(Vec_isVectorOrdered, _:vec);
 }
 
+stock bool:Vec_ToggleOrdered(Vec:vec, bool:toggle) {
+    if(!IsValidVec(vec)) {
+        return 0;
+    }
+    mset(Vec_isVectorOrdered, _:vec, _:toggle);
+}
+
 stock Vec_Resize(Vec:vec, newSize) {
+    if(!IsValidVec(vec)) {
+        return 0;
+    }
     if(newSize < Vec_GetLength(vec)) {
         return 0;
     }
@@ -194,6 +213,9 @@ stock Vec_Resize(Vec:vec, newSize) {
 }
 
 stock Vec_Append(Vec:vec, value) {
+    if(!IsValidVec(vec)) {
+        return 0;
+    }
     new length = mget(Vec_vectorLength, _:vec);
     new Alloc:arr = Vec_GetVecAllocSlot(vec);
     //append the value to the alloc
@@ -205,6 +227,9 @@ stock Vec_Append(Vec:vec, value) {
 }
 
 stock Vec_AppendArray(Vec:vec, const arr[], arrSize = sizeof arr) {
+    if(!IsValidVec(vec)) {
+        return 0;
+    }
     new length = mget(Vec_vectorLength, _:vec);
     new Alloc:alloc = Vec_GetVecAllocSlot(vec);
     //append the value to the alloc
@@ -216,6 +241,9 @@ stock Vec_AppendArray(Vec:vec, const arr[], arrSize = sizeof arr) {
 }
 
 stock Vec_GetValue(Vec:vec, index) {
+    if(!IsValidVec(vec)) {
+        return 0;
+    }
     if(index > Vec_GetLength(vec)) {
         //if the index wasn't set yet dont try to acces it
         //this return value is indistinguishable from a valid return value
@@ -226,6 +254,9 @@ stock Vec_GetValue(Vec:vec, index) {
 }
 
 stock Vec_SetValue(Vec:vec, index, value) {
+    if(!IsValidVec(vec)) {
+        return 0;
+    }
     if(index > Vec_GetLength(vec)) {
         //if the index wasn't set yet dont try to acces it
         return 0;
@@ -235,17 +266,22 @@ stock Vec_SetValue(Vec:vec, index, value) {
 }
 
 stock Vec_Remove(Vec:vec, index) {
+    if(!IsValidVec(vec)) {
+        return 0;
+    }
     new length = Vec_GetLength(vec);
     Vec_internalRemove(Vec_GetVecAllocSlot(vec), index, Vec_IsOrdered(vec), length);
     mset(Vec_vectorLength, _:vec, length);
 }
 
 stock Vec_Delete(Vec:vec) {
+    if(!IsValidVec(vec)) {
+        return 0;
+    }
     Vec_ReleaseId(vec);
     new Alloc:slot = Vec_GetVecAllocSlot(vec);
     Malloc_Free(slot);
     mset(Vec_vectorLength, _:vec, 0);
     mset(Vec_isVectorOrdered, _:vec, 0);
-    mset(Vec_vectorSlot, _:vec, 0);
-    
+    mset(Vec_vectorSlot, _:vec, 0);    
 }

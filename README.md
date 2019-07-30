@@ -68,14 +68,23 @@ Creates a new vector and initializes it with the values stored in an array.
   
   **parameters:**
   * `Vec:vec`
-    the vector to get length from.
+    the vector to get capacity from.
 
 * **bool:Vec_IsOrdered**
   Returns if the vector is ordered or not.
   
   **parameters:**
   * `Vec:vec`
-    the vector to get length from.
+    the vector to get if it's ordered.
+
+* **bool:Vec_ToggleOrdered**
+  Enables or disable if a vector is ordered
+  
+  **parameters:**
+  * `Vec:vec`
+    the vector to set ordered.
+  * `bool:toggle`
+    the state to set the vector to
 
 * **Vec_Resize**
   changes the capacity of the vector.
