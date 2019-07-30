@@ -36,6 +36,7 @@ You can `#define` both before including the package to change these values
 
 * `Vec:Vec_CreateVector`
 Creates a new vector.
+
   **parameters:**
   
   * `capacity = VEC_DEFAULT_CAPACITY`
