@@ -156,6 +156,8 @@ hook OnScriptExit() {
     api
 */
 
+#define Vec_GetString(%0,%1)    mget(Vec_GetVecAllocSlot((%0)), _:(%1))
+
 stock Vec:Vec_CreateVector(capacity = VEC_DEFAULT_CAPACITY, bool:ordered = false) {
     new Alloc:a = malloc(capacity);
     new Vec:id = Vec_getNewId();
@@ -254,6 +256,10 @@ stock Vec_AppendFloat(Vec:vec, Float:value) {
     return Vec_Append(vec, _:value);
 }
 
+stock Vec_AppendVec(Vec:vec, Vec:value) {
+    return Vec_Append(vec, _:value);
+}
+
 stock Vec:AppendBool(Vec:vec, bool:value) {
     return Vec_Append(vec, _:value); 
 }
@@ -288,12 +294,12 @@ stock bool:Vec_GetValueBool(Vec:vec, index) {
     return bool:Vec_GetValue(vec, index);
 }
 
-stock bool:Vec_GetValueFloat(Vec:vec, index) {
-    return Float:Vec_GetValue(vec, index);
+stock bool:Vec_GetValueVec(Vec:vec, index) {
+    return Vec:Vec_GetValue(vec, index);
 }
 
-stock Vec_GetArray(Vec:vec, index, dest[], length) {
-    return Malloc_GetS(dest, length, Vec_GetVecAllocSlot(vec), index, false);
+stock bool:Vec_GetValueFloat(Vec:vec, index) {
+    return Float:Vec_GetValue(vec, index);
 }
 
 stock Vec_SetValue(Vec:vec, index, value) {
@@ -309,6 +315,10 @@ stock Vec_SetValue(Vec:vec, index, value) {
 }
 
 stock Vec_SetValueFloat(Vec:vec, index, Float:value) {
+    return Vec_SetValue(vec, index, _:value);
+}
+
+stock Vec_SetValueVec(Vec:vec, index, Vec:value) {
     return Vec_SetValue(vec, index, _:value);
 }
 
@@ -338,5 +348,3 @@ stock Vec_Delete(Vec:vec) {
     mset(Vec_vectorSlot, _:vec, 0);
     return 1;
 }
-
-#define Vec_GetString(%0,%1)    mget(Vec_GetVecAllocSlot((%0)), _:(%1))
