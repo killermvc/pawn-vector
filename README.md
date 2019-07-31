@@ -104,6 +104,24 @@ Creates a new vector and initializes it with the values stored in an array.
   * `value`
     the value to append.
 
+* **Vec_AppendFloat**
+  appends a float value to the end of the vector.
+  
+  **parameters:**
+  * `Vec:vec`
+    the vector to append to.
+  * `Float:value`
+    the value to append.
+
+* **Vec_AppendBool**
+  appends a bool value to the end of the vector.
+  
+  **parameters:**
+  * `Vec:vec`
+    the vector to append to.
+  * `bool:value`
+    the value to append.
+
 * **Vec_AppendArray**
 appends all the values in the array to the end of the vector.
   
@@ -123,15 +141,57 @@ reads a value from the vector.
     the vector to get the value from.
   * `index`
     the index to read from.
+  
+* **bool:Vec_GetValueBool**
+reads a bool value from the vector.
+  
+  **parameters:**
+  * `Vec:vec`
+    the vector to get the value from.
+  * `index`
+    the index to read from.
+
+* **Float:Vec_GetValueFloat**
+reads a float value from the vector.
+  
+  **parameters:**
+  * `Vec:vec`
+    the vector to get the value from.
+  * `index`
+    the index to read from.
 
 * **Vec_SetValue**
-reads a value from the vector
+sets a value in the vector.
   
   **parameters:**
   * `Vec:vec`
     the vector to set the value to.
   * `index`
     the index to set to.
+  * `value`
+    the value to set.
+
+* **Vec_SetValueFloat**
+sets a float value in the vector.
+  
+  **parameters:**
+  * `Vec:vec`
+    the vector to set the value to.
+  * `index`
+    the index to set to.
+  * `Float:value`
+    the value to set.
+
+* **Vec_SetValueBool**
+sets a bool value in the vector.
+  
+  **parameters:**
+  * `Vec:vec`
+    the vector to set the value to.
+  * `index`
+    the index to set to.
+  * `bool:value`
+    the value to set.
 
 * **Vec_Remove**
     removes a value from the vector

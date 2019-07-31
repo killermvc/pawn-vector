@@ -17,9 +17,14 @@ static  Alloc:Vec_vectorLength;
 static  Alloc:Vec_isVectorOrdered;
 static  Alloc:Vec_vectorSlot;
 
-static  Vec:Vec_LastID;//highest id assigned
-static  Alloc:Vec_releasedIDs;//array with ids that were in use and then released
-static  Vec_lastReleasedID;//index of the last released id
+//highest id assigned
+static  Vec:Vec_LastID;
+
+//array with ids that were in use and then released
+static  Alloc:Vec_releasedIDs;
+
+//index of the last released id
+static  Vec_lastReleasedID;
 
 
 static Alloc:Vec_internalResize(Alloc:slot, newSize, length) {
@@ -272,11 +277,17 @@ stock Vec_GetValue(Vec:vec, index) {
     }
     if(index > Vec_GetLength(vec)) {
         //if the index wasn't set yet dont try to acces it
-        //this return value is indistinguishable from a valid return value
-        //thus index must always be checked to be valid before calling this function
         return 0;
     }
     return mget(Vec_GetVecAllocSlot(vec), index);
+}
+
+stock bool:Vec_GetValueBool(Vec:vec, index) {
+    return bool:Vec_GetValue(vec, index);
+}
+
+stock bool:Vec_GetValueFloat(Vec:vec, index) {
+    return Float:Vec_GetValue(vec, index);
 }
 
 stock Vec_SetValue(Vec:vec, index, value) {
