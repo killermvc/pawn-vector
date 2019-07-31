@@ -24,7 +24,7 @@ static  Vec:Vec_LastID;
 static  Alloc:Vec_releasedIDs;
 
 //index of the last released id
-static  Vec_lastReleasedID;
+static  Vec_lastReleasedID = -1;
 
 
 static Alloc:Vec_internalResize(Alloc:slot, newSize, length) {
@@ -87,6 +87,7 @@ static Vec_internalRemove(Alloc:slot, index, bool:ordered, &length) {
 static Vec:Vec_getNewId() {
     if(Vec_lastReleasedID >= 0) {
         //if there are released ids return one of them
+
         new id = mget(Vec_releasedIDs, Vec_lastReleasedID);
         Vec_lastReleasedID--;
         return Vec:id;
@@ -98,6 +99,7 @@ static Vec:Vec_getNewId() {
 
 bool:IsValidVec(Vec:vec) {
     if(vec >= Vec_LastID) {
+
         return false;
     }
     for(new i = 0; i <= _:Vec_lastReleasedID; i++) {
@@ -125,7 +127,7 @@ static Vec_ReleaseId(Vec:id) {
 
 
 
-static Alloc:Vec_GetVecAllocSlot(Vec:vec) {
+Alloc:Vec_GetVecAllocSlot(Vec:vec) {
     return Alloc:mget(Vec_vectorSlot, _:vec);
 }
 
@@ -272,13 +274,13 @@ stock Vec_AppendArray(Vec:vec, const arr[], arrSize = sizeof arr) {
 }
 
 stock Vec_GetValue(Vec:vec, index) {
-    if(!IsValidVec(vec)) {
+    /*if(!IsValidVec(vec)) {
         return 0;
     }
     if(index > Vec_GetLength(vec)) {
         //if the index wasn't set yet dont try to acces it
         return 0;
-    }
+    }*/
     return mget(Vec_GetVecAllocSlot(vec), index);
 }
 
@@ -288,6 +290,10 @@ stock bool:Vec_GetValueBool(Vec:vec, index) {
 
 stock bool:Vec_GetValueFloat(Vec:vec, index) {
     return Float:Vec_GetValue(vec, index);
+}
+
+stock Vec_GetArray(Vec:vec, index, dest[], length) {
+    return Malloc_GetS(dest, length, Vec_GetVecAllocSlot(vec), index, false);
 }
 
 stock Vec_SetValue(Vec:vec, index, value) {
@@ -332,3 +338,5 @@ stock Vec_Delete(Vec:vec) {
     mset(Vec_vectorSlot, _:vec, 0);
     return 1;
 }
+
+#define Vec_GetString(%0,%1)    mget(Vec_GetVecAllocSlot((%0)), _:(%1))

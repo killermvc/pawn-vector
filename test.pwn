@@ -2,7 +2,7 @@
 #include "pawn-vector.inc"
 
 main() {
-    new Vec: vector = Vec_CreateVector();
+    new Vec:vector = Vec_CreateVector();
     if(!IsValidVec(vector)) {
         print("Vec_CreateVector failed");
     } else {
@@ -85,5 +85,12 @@ main() {
     } else {
         print("Vec_Remove ordered passed");
     }
-}
 
+    //using a vector as an string
+    new Vec:vector3 = Vec_CreateVectorFromArray("hello, world!", 13);
+    new dest[14];
+    Vec_GetArray(vector3, 0, dest, sizeof dest);
+    printf("vector3: %s", Vec_GetString(vector3, 0));
+    
+    printf("vector3-2: %s", dest);
+}
