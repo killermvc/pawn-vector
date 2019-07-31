@@ -4,7 +4,7 @@
 main() {
     new Vec: vector = Vec_CreateVector();
     if(!IsValidVec(vector)) {
-        printf("vector: %d", _:vector);
+        print("Vec_CreateVector failed");
     } else {
         print("Vec_CreateVector passed");
     }

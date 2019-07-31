@@ -126,18 +126,21 @@ static Alloc:Vec_GetVecAllocSlot(Vec:vec) {
 
 #include <YSI\y_hooks>
 hook OnScriptInit() {
-    Vec_vectorLength = malloc(100);
-    Vec_vectorSlot = malloc(100);
-    Vec_isVectorOrdered = malloc(100);
-    Vec_releasedIDs = malloc(50);
+    Vec_vectorLength = malloc(10);
+    Vec_vectorSlot = malloc(10);
+    Vec_isVectorOrdered = malloc(10);
+    Vec_releasedIDs = malloc(10);
     return 1;
 }
 
 hook OnScriptExit() {
     free(Vec_releasedIDs);
-    free(Vec_vectorLength);
-    free(Vec_vectorSlot);
+    free(Vec_vectorLength);    
     free(Vec_isVectorOrdered);
+    for(new i = 0; i < _:Vec_LastID; i++) {
+        free(Alloc:mget(Vec_vectorSlot, i));
+    }
+    free(Vec_vectorSlot);
     return 1;
 }
 
@@ -149,6 +152,12 @@ hook OnScriptExit() {
 stock Vec:Vec_CreateVector(capacity = VEC_DEFAULT_CAPACITY, bool:ordered = false) {
     new Alloc:a = malloc(capacity);
     new Vec:id = Vec_getNewId();
+    new length = Malloc_SlotSize(Vec_vectorSlot);
+    if(_:id >= length) {
+        Vec_internalResize(Vec_vectorLength, _:id + VEC_DEFAULT_INCREASE, length);
+        Vec_internalResize(Vec_isVectorOrdered, _:id + VEC_DEFAULT_INCREASE, length);
+        Vec_internalResize(Vec_vectorSlot, _:id + VEC_DEFAULT_INCREASE, length);
+    }
     mset(Vec_vectorLength, id, 0);
     mset(Vec_isVectorOrdered, id, _:ordered);
     mset(Vec_vectorSlot, id, _:a);
@@ -161,9 +170,15 @@ stock Vec:Vec_CreateVectorFromArray(const arr[], arrSize, capacity = VEC_DEFAULT
     }
     new Alloc:a = malloc(capacity);
     new Vec:id = Vec_getNewId();
-    
+
+    new length = Malloc_SlotSize(Vec_vectorSlot);
+    if(_:id >= length) {
+        Vec_internalResize(Vec_vectorLength, _:id + VEC_DEFAULT_INCREASE, length);
+        Vec_internalResize(Vec_isVectorOrdered, _:id + VEC_DEFAULT_INCREASE, length);
+        Vec_internalResize(Vec_vectorSlot, _:id + VEC_DEFAULT_INCREASE, length);
+    }        
     mset(Vec_isVectorOrdered, id, _:ordered);
-    new length = 0;
+    length = 0;
     a = Vec_internalAppendArray(a, arr, arrSize, length);
     mset(Vec_vectorSlot, id, _:a);
     mset(Vec_vectorLength, id, length);
@@ -186,7 +201,7 @@ stock Vec_GetCapacity(Vec:vec) {
 
 stock bool:Vec_IsOrdered(Vec:vec) {
     if(!IsValidVec(vec)) {
-        return 0;
+        return false;
     }
     return bool:mget(Vec_isVectorOrdered, _:vec);
 }
@@ -196,6 +211,7 @@ stock bool:Vec_ToggleOrdered(Vec:vec, bool:toggle) {
         return 0;
     }
     mset(Vec_isVectorOrdered, _:vec, _:toggle);
+    return 1;
 }
 
 stock Vec_Resize(Vec:vec, newSize) {
@@ -224,6 +240,15 @@ stock Vec_Append(Vec:vec, value) {
     mset(Vec_vectorSlot, _:vec, _:arr);
     //update the length of the vector
     mset(Vec_vectorLength, _:vec, length);
+    return 1;
+}
+
+stock Vec_AppendFloat(Vec:vec, Float:value) {
+    return Vec_Append(vec, _:value);
+}
+
+stock Vec:AppendBool(Vec:vec, bool:value) {
+    return Vec_Append(vec, _:value); 
 }
 
 stock Vec_AppendArray(Vec:vec, const arr[], arrSize = sizeof arr) {
@@ -238,6 +263,7 @@ stock Vec_AppendArray(Vec:vec, const arr[], arrSize = sizeof arr) {
     mset(Vec_vectorSlot, _:vec, _:alloc);
     //update the length of the vector
     mset(Vec_vectorLength, _:vec, length);
+    return 1;
 }
 
 stock Vec_GetValue(Vec:vec, index) {
@@ -265,6 +291,14 @@ stock Vec_SetValue(Vec:vec, index, value) {
     return 1;
 }
 
+stock Vec_SetValueFloat(Vec:vec, index, Float:value) {
+    return Vec_SetValue(vec, index, _:value);
+}
+
+stock Vec_SetValueBool(Vec:vec, index, bool:value) {
+    return Vec_SetValue(vec, index, _:value);
+}
+
 stock Vec_Remove(Vec:vec, index) {
     if(!IsValidVec(vec)) {
         return 0;
@@ -272,6 +306,7 @@ stock Vec_Remove(Vec:vec, index) {
     new length = Vec_GetLength(vec);
     Vec_internalRemove(Vec_GetVecAllocSlot(vec), index, Vec_IsOrdered(vec), length);
     mset(Vec_vectorLength, _:vec, length);
+    return 1;
 }
 
 stock Vec_Delete(Vec:vec) {
@@ -283,5 +318,6 @@ stock Vec_Delete(Vec:vec) {
     Malloc_Free(slot);
     mset(Vec_vectorLength, _:vec, 0);
     mset(Vec_isVectorOrdered, _:vec, 0);
-    mset(Vec_vectorSlot, _:vec, 0);    
+    mset(Vec_vectorSlot, _:vec, 0);
+    return 1;
 }
