@@ -283,8 +283,7 @@ stock Vec_GetValue(Vec:vec, index) {
     if(!IsValidVec(vec)) {
         return 0;
     }
-    if(index > Vec_GetLength(vec)) {
-        //if the index wasn't set yet dont try to acces it
+    if(index >= Vec_GetCapacity(vec)) {
         return 0;
     }
     return mget(Vec_GetVecAllocSlot(vec), index);
