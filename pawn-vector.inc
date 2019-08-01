@@ -27,7 +27,7 @@ static  Alloc:Vec_releasedIDs;
 static  Vec_lastReleasedID = -1;
 
 
-static Alloc:Vec_internalResize(Alloc:slot, newSize, length) {
+static stock Alloc:Vec_internalResize(Alloc:slot, newSize, length) {
     //alloc more memory with the new size
     new Alloc:newArr = malloc(newSize);
     //copy last alloc to the newly allocated data
@@ -39,7 +39,7 @@ static Alloc:Vec_internalResize(Alloc:slot, newSize, length) {
     return newArr;
 }
 
-static Alloc:Vec_internalAppend(Alloc:slot, value, &length) {
+static stock Alloc:Vec_internalAppend(Alloc:slot, value, &length) {
     if(length < Malloc_SlotSize(slot)) {
         //if there is enough space for the new value just set it at the end
         mset(slot, length, value);
@@ -54,7 +54,7 @@ static Alloc:Vec_internalAppend(Alloc:slot, value, &length) {
     return newArr;
 }
 
-static Alloc:Vec_internalAppendArray(Alloc:slot, const arr[], arrSize, &length) {
+static stock Alloc:Vec_internalAppendArray(Alloc:slot, const arr[], arrSize, &length) {
     if(length+arrSize < Malloc_SlotSize(slot)) {
         //if there is enough space for the new value just set it at the end
         Malloc_SetA(slot, length, arr, arrSize);
@@ -68,7 +68,7 @@ static Alloc:Vec_internalAppendArray(Alloc:slot, const arr[], arrSize, &length) 
     return newArr;
 }
 
-static Vec_internalRemove(Alloc:slot, index, bool:ordered, &length) {
+static stock Vec_internalRemove(Alloc:slot, index, bool:ordered, &length) {
     if(index > length) {
         return 0;
     }
@@ -84,7 +84,7 @@ static Vec_internalRemove(Alloc:slot, index, bool:ordered, &length) {
     return 1;
 }
 
-static Vec:Vec_getNewId() {
+static stock Vec:Vec_getNewId() {
     if(Vec_lastReleasedID >= 0) {
         //if there are released ids return one of them
 
