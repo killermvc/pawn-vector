@@ -280,13 +280,13 @@ stock Vec_AppendArray(Vec:vec, const arr[], arrSize = sizeof arr) {
 }
 
 stock Vec_GetValue(Vec:vec, index) {
-    /*if(!IsValidVec(vec)) {
+    if(!IsValidVec(vec)) {
         return 0;
     }
     if(index > Vec_GetLength(vec)) {
         //if the index wasn't set yet dont try to acces it
         return 0;
-    }*/
+    }
     return mget(Vec_GetVecAllocSlot(vec), index);
 }
 
@@ -307,8 +307,10 @@ stock Vec_SetValue(Vec:vec, index, value) {
         return 0;
     }
     if(index > Vec_GetLength(vec)) {
-        //if the index wasn't set yet dont try to acces it
-        return 0;
+        if(index >= Vec_GetCapacity(vec)) {
+            Vec_Resize(vec, index + VEC_DEFAULT_INCREASE);
+        }
+        mset(Vec_vectorLength, _:vec, index+1);       
     }
     mset(Vec_GetVecAllocSlot(vec), index, value);
     return 1;
