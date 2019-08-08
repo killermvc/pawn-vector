@@ -158,7 +158,7 @@ hook OnScriptExit() {
 
 #define Vec_GetString(%0,%1)    mget(Vec_GetVecAllocSlot((%0)), _:(%1))
 
-stock Vec:Vec_CreateVector(capacity = VEC_DEFAULT_CAPACITY, bool:ordered = false) {
+stock Vec:Vec_New(capacity = VEC_DEFAULT_CAPACITY, bool:ordered = false) {
     new Alloc:a = malloc(capacity);
     new Vec:id = Vec_getNewId();
     new length = Malloc_SlotSize(Vec_vectorSlot);
@@ -173,7 +173,7 @@ stock Vec:Vec_CreateVector(capacity = VEC_DEFAULT_CAPACITY, bool:ordered = false
     return id;
 }
 
-stock Vec:Vec_CreateVectorFromArray(const arr[], arrSize, capacity = VEC_DEFAULT_CAPACITY, bool:ordered = false) {
+stock Vec:Vec_NewFromArray(const arr[], arrSize, capacity = VEC_DEFAULT_CAPACITY, bool:ordered = false) {
     if(capacity < arrSize) {
         capacity = arrSize + VEC_DEFAULT_INCREASE;
     }

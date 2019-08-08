@@ -2,11 +2,11 @@
 #include "pawn-vector.inc"
 
 main() {
-    new Vec:vector = Vec_CreateVector();
+    new Vec:vector = Vec_New();
     if(!IsValidVec(vector)) {
-        print("Vec_CreateVector failed");
+        print("Vec_New failed");
     } else {
-        print("Vec_CreateVector passed");
+        print("Vec_New passed");
     }
 
     Vec_Append(vector, 1);
@@ -23,11 +23,11 @@ main() {
     arr[0] = 1;
     arr[1] = 2;
     arr[2] = 3;
-    new Vec:vec = Vec_CreateVectorFromArray(arr, sizeof arr);
+    new Vec:vec = Vec_NewFromArray(arr, sizeof arr);
     if(Vec_GetValue(vec, 0) != 1 || Vec_GetValue(vec, 1) != 2 ||  Vec_GetValue(vec, 2) != 3) {
-        printf("Vec_CreateVectorFromArray failed", Vec_GetLength(vec));
+        printf("Vec_NewFromArray failed", Vec_GetLength(vec));
     } else {
-        print("Vec_CreateVectorFromArray passed");
+        print("Vec_NewFromArray passed");
     }
 
     if(Vec_GetCapacity(vec) != VEC_DEFAULT_CAPACITY) {
@@ -76,7 +76,7 @@ main() {
     for(new i = 0; i < 6; i++) {
         arr2[i] = i+1;
     }
-    new Vec:vector2 = Vec_CreateVectorFromArray(arr2, sizeof arr2, VEC_DEFAULT_CAPACITY, true);
+    new Vec:vector2 = Vec_NewFromArray(arr2, sizeof arr2, VEC_DEFAULT_CAPACITY, true);
     
     Vec_Remove(vector2, 3);
 
@@ -87,6 +87,6 @@ main() {
     }
 
     //using a vector as an string
-    new Vec:vector3 = Vec_CreateVectorFromArray("hello, world!", 13);
+    new Vec:vector3 = Vec_NewFromArray("hello, world!", 13);
     printf("vector3: %s", Vec_GetString(vector3, 0));
 }
