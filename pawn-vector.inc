@@ -70,6 +70,7 @@ static stock Alloc:Vec_internalAppendArray(Alloc:slot, const arr[], arrSize, &le
 
 static stock Vec_internalRemove(Alloc:slot, index, bool:ordered, &length) {
     if(index > length) {
+        //if the index wasnt yet setted, don't remove it
         return 0;
     }
     if(!ordered) {
@@ -99,14 +100,16 @@ static stock Vec:Vec_getNewId() {
 
 bool:IsValidVec(Vec:vec) {
     if(vec >= Vec_LastID) {
-
+        //if the id wasn't yet assigned return false
         return false;
     }
     for(new i = 0; i <= _:Vec_lastReleasedID; i++) {
         if(mget(Vec_releasedIDs, i) == _:vec) {
+            //if the id is released return false
             return false;
         }
     }
+    //otherwise return true
     return true;
 }
 
@@ -293,7 +296,7 @@ stock bool:Vec_GetValueBool(Vec:vec, index) {
     return bool:Vec_GetValue(vec, index);
 }
 
-stock bool:Vec_GetValueVec(Vec:vec, index) {
+stock Vec:Vec_GetValueVec(Vec:vec, index) {
     return Vec:Vec_GetValue(vec, index);
 }
 
