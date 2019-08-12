@@ -89,4 +89,14 @@ main() {
     //using a vector as an string
     new Vec:vector3 = Vec_NewFromArray("hello, world!", 13);
     printf("vector3: %s", Vec_GetString(vector3, 0));
+
+    new Vec:slots[50];
+    for(new i =0; i < 50; i++) {
+        slots[i] = Vec_New();
+    }
+
+    for(new i =0; i < 50; i++) {
+        Vec_Delete(slots[i]);
+    }
+    
 }
