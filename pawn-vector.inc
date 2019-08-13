@@ -233,7 +233,7 @@ stock Vec:Vec_NewFromArray(const arr[], arrSize, capacity = VEC_DEFAULT_CAPACITY
 
     new length = Malloc_SlotSize(Vec_vectorSlot);
     if(_:id >= length) {
-        if(!Vec_resizeVectorsData(_:id, length)) {
+        if(Vec_resizeVectorsData(_:id, length) == VEC_NOALLOC) {    
             return INVALID_VECTOR_ID;
         }
     }
