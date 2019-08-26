@@ -87,7 +87,13 @@ main() {
     }
 
     //using a vector as an string
-    new Vec:vector3 = Vec_NewFromArray("hello, world!", 13);
+    new Vec:vector3 = Vec_NewFromArray("hello,", 6);
+    printf("vector3: %s", Vec_GetString(vector3, 0));
+
+    Vec_AppendString(vector3, " world!");
+    printf("vector3: %s", Vec_GetString(vector3, 0));
+
+    Vec_ChangeString(vector3, "hola, mundo!");
     printf("vector3: %s", Vec_GetString(vector3, 0));
 
     new Vec:slots[50];

@@ -339,6 +339,10 @@ stock Vec_AppendArray(Vec:vec, const arr[], arrSize = sizeof arr) {
     return VEC_OK;
 }
 
+stock Vec_AppendString(Vec:vec, const str[], arrSize = sizeof str) {
+    return Vec_AppendArray(vec, str, arrSize);
+}
+
 stock Vec_GetValue(Vec:vec, index) {
     if(!IsValidVec(vec)) {
         return VEC_INVALID;
@@ -396,6 +400,23 @@ stock Vec_Remove(Vec:vec, index) {
     new length = Vec_GetLength(vec);
     Vec_internalRemove(Vec_GetVecAllocSlot(vec), index, Vec_IsOrdered(vec), length);
     mset(Vec_vectorLength, _:vec, length);
+    return VEC_OK;
+}
+
+stock Vec_ChangeString(Vec:vec, const str[], len = -1) {
+    if(!IsValidVec(vec)) {
+        return VEC_INVALID;
+    }
+    if(len == -1) {
+        len = strlen(str);
+    }
+    //reset vector's length and append string at the start
+    mset(Vec_vectorLength, _:vec, 0);
+    if (Vec_AppendArray(vec, str, len) == VEC_NOALLOC) {
+        return VEC_NOALLOC;
+    }
+    //set a null terminator after string
+    Vec_SetValue(vec, mget(Vec_vectorLength, _:vec), '\0');
     return VEC_OK;
 }
 
