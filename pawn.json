@@ -5,7 +5,7 @@
 	"output": "test.amx",
 	"dependencies": [
 		"sampctl/samp-stdlib",
-		"pawn-lang/YSI-Includes"
+		"pawn-lang/YSI-Includes@5.x"
 	],
 	"builds": [
 		{
@@ -15,7 +15,7 @@
 	],
 	"runtime": {
 		"version": "0.3.7",
-		"mode": "main",
+		"mode": "y_testing",
 		"echo": "-",
 		"rcon_password": "password",
 		"port": 7777

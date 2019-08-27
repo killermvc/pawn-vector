@@ -1,4 +1,4 @@
-#include <YSI\y_malloc>
+#include <YSI_Coding\y_malloc>
 
 #if !defined VEC_DEFAULT_CAPACITY
     #define VEC_DEFAULT_CAPACITY    (50)
@@ -170,7 +170,7 @@ stock Alloc:Vec_GetVecAllocSlot(Vec:vec) {
     return Alloc:mget(Vec_vectorSlot, _:vec);
 }
 
-#include <YSI\y_hooks>
+#include <YSI_Coding\y_hooks>
 hook OnScriptInit() {
     Vec_vectorLength = malloc(10);
     if(Vec_vectorLength == NO_ALLOC) {
