@@ -40,12 +40,10 @@ Test:Resize() {
 	new Vec:vec = Vec_New();
 
     Vec_Resize(vec, 51);
-    printf("size: %d", Vec_GetCapacity(vec));
     //y_malloc allocates at least the number of cells specified, but might be higher
     ASSERT(Vec_GetCapacity(vec) >= 51);
 
     Vec_Resize(vec, 150);
-    printf("size: %d", Vec_GetCapacity(vec));
     //y_malloc allocates at least the number of cells specified, but might be higher
     ASSERT(Vec_GetCapacity(vec) >= 150);
 }
@@ -95,4 +93,12 @@ Test:RemoveOrdered() {
     ASSERT(Vec_GetValue(vector, 2) == 4);
     ASSERT(Vec_GetValue(vector, 3) == 5);
     ASSERT(Vec_GetValue(vector, 4) == 6);
+}
+
+Test:SizeIncrease() {
+    new Vec:vec = Vec_New(1, false, 10);
+    ASSERT(Vec_GetCapacity(vec) >= 1);
+    Vec_Append(vec, 1);
+    Vec_Append(vec, 2);
+    ASSERT(Vec_GetCapacity(vec) >= 11);
 }

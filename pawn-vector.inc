@@ -22,9 +22,10 @@ enum _:e_VEC_ERRORS {
 
 #define INVALID_VECTOR_ID           (Vec:-1)
 
-static  Alloc:Vec_vectorLength;
-static  Alloc:Vec_isVectorOrdered;
-static  Alloc:Vec_vectorSlot;
+static Alloc:Vec_vectorLength;
+static Alloc:Vec_isVectorOrdered;
+static Alloc:Vec_increase;
+static Alloc:Vec_vectorSlot;
 
 //highest id assigned
 static  Vec:Vec_LastID;
@@ -48,7 +49,7 @@ static stock Alloc:Vec_internalResize(Alloc:slot, newSize, length) {
     return newArr;
 }
 
-static stock Alloc:Vec_internalAppend(Alloc:slot, value, &length) {
+static stock Alloc:Vec_internalAppend(Alloc:slot, value, &length, increase = VEC_DEFAULT_INCREASE) {
     if(length < Malloc_SlotSize(slot)) {
         //if there is enough space for the new value just set it at the end
         mset(slot, length, value);
@@ -56,16 +57,16 @@ static stock Alloc:Vec_internalAppend(Alloc:slot, value, &length) {
         return slot;
     }
     //if there isn't enough space resize the alloc and set the value at the end of the new alloc
-    new Alloc:newArr = Vec_internalResize(slot, Malloc_SlotSize(slot) + VEC_DEFAULT_INCREASE, Malloc_SlotSize(slot));
+    new Alloc:newArr = Vec_internalResize(slot, Malloc_SlotSize(slot) + increase, Malloc_SlotSize(slot));
     if(newArr != NO_ALLOC) {
-        mset(slot, length, value);
+        mset(newArr, length, value);
         length++;
     }
     //will return the new Alloc slot if Vec_internalResize succeeded or NO_ALLOC otherwise
     return newArr;
 }
 
-static stock Alloc:Vec_internalAppendArray(Alloc:slot, const arr[], arrSize, &length) {
+static stock Alloc:Vec_internalAppendArray(Alloc:slot, const arr[], arrSize, &length, increase = VEC_DEFAULT_INCREASE) {
     if(length+arrSize < Malloc_SlotSize(slot)) {
         //if there is enough space for the new value just set it at the end
         Malloc_SetA(slot, length, arr, arrSize);
@@ -73,7 +74,7 @@ static stock Alloc:Vec_internalAppendArray(Alloc:slot, const arr[], arrSize, &le
         return slot;
     }
     //if there isn't enough space resize the alloc and set the value at the end of the new alloc
-    new Alloc:newArr = Vec_internalResize(slot, length + arrSize + VEC_DEFAULT_INCREASE, Malloc_SlotSize(slot));
+    new Alloc:newArr = Vec_internalResize(slot, length + arrSize + increase, Malloc_SlotSize(slot));
     if(newArr != NO_ALLOC) {
         Malloc_SetA(newArr, length, arr, arrSize);
         length += arrSize;
@@ -91,9 +92,7 @@ static stock Vec_internalRemove(Alloc:slot, index, bool:ordered, &length) {
         length--;
         return VEC_OK;
     }
-    for(new i = index; i < length; i++) {
-        mset(slot, i, mget(slot, i+1));
-    }
+    Malloc_SetA(slot, index, mget(slot, index+1), length-index);
     length--;
     return VEC_OK;
 }
@@ -163,6 +162,12 @@ static stock Vec_resizeVectorsData(id, length) {
         return VEC_NOALLOC;
     }
     Vec_vectorSlot = ret;
+    ret = Vec_internalResize(Vec_increase, id + VEC_DEFAULT_INCREASE, length);
+    if(ret == NO_ALLOC) {
+        P:F("PAWN-VECTOR couldn't allocate more memory for vectors' increase");
+        return VEC_NOALLOC;
+    }
+    Vec_increase = ret;
     return VEC_OK;
 }
 
@@ -183,6 +188,10 @@ hook OnScriptInit() {
     Vec_isVectorOrdered = malloc(10);
     if(Vec_isVectorOrdered == NO_ALLOC) {
         P:F("PAWN-VECTOR couldn't allocate memory for storing vector ordered status");
+    }
+    Vec_increase = malloc(10);
+    if(Vec_releasedIDs == NO_ALLOC) {
+        P:F("PAWN-VECTOR couldn't allocate memory for vectors' increase");
     }
     Vec_releasedIDs = malloc(10);
     if(Vec_releasedIDs == NO_ALLOC) {
@@ -209,7 +218,7 @@ hook OnScriptExit() {
 
 #define Vec_GetString(%0,%1)    mget(Vec_GetVecAllocSlot((%0)), _:(%1))
 
-stock Vec:Vec_New(capacity = VEC_DEFAULT_CAPACITY, bool:ordered = false) {
+stock Vec:Vec_New(capacity = VEC_DEFAULT_CAPACITY, bool:ordered = false, sizeIncrease = VEC_DEFAULT_INCREASE) {
     new Alloc:a = malloc(capacity);
     new Vec:id = Vec_getNewId();
     new length = Malloc_SlotSize(Vec_vectorSlot);
@@ -219,14 +228,15 @@ stock Vec:Vec_New(capacity = VEC_DEFAULT_CAPACITY, bool:ordered = false) {
         }
     }
     mset(Vec_vectorLength, id, 0);
+    mset(Vec_increase, id, sizeIncrease);
     mset(Vec_isVectorOrdered, id, _:ordered);
     mset(Vec_vectorSlot, id, _:a);
     return id;
 }
 
-stock Vec:Vec_NewFromArray(const arr[], arrSize, capacity = VEC_DEFAULT_CAPACITY, bool:ordered = false) {
+stock Vec:Vec_NewFromArray(const arr[], arrSize, capacity = VEC_DEFAULT_CAPACITY, bool:ordered = false, sizeIncrease = VEC_DEFAULT_INCREASE) {
     if(capacity < arrSize) {
-        capacity = arrSize + VEC_DEFAULT_INCREASE;
+        capacity = arrSize + sizeIncrease;
     }
     new Alloc:a = malloc(capacity);
     new Vec:id = Vec_getNewId();
@@ -239,8 +249,9 @@ stock Vec:Vec_NewFromArray(const arr[], arrSize, capacity = VEC_DEFAULT_CAPACITY
     }
     mset(Vec_isVectorOrdered, id, _:ordered);
     length = 0;
-    a = Vec_internalAppendArray(a, arr, arrSize, length);
+    a = Vec_internalAppendArray(a, arr, arrSize, length, sizeIncrease);
     mset(Vec_vectorSlot, id, _:a);
+    mset(Vec_increase, id, sizeIncrease);
     mset(Vec_vectorLength, id, length);
     return id;
 }
@@ -298,7 +309,7 @@ stock Vec_Append(Vec:vec, value) {
     new length = mget(Vec_vectorLength, _:vec);
     new Alloc:arr = Vec_GetVecAllocSlot(vec);
     //append the value to the alloc
-    arr = Vec_internalAppend(arr, value, length);
+    arr = Vec_internalAppend(arr, value, length, mget(Vec_increase, _:vec));
     if(arr == NO_ALLOC) {
         return VEC_NOALLOC;
     }
@@ -328,7 +339,7 @@ stock Vec_AppendArray(Vec:vec, const arr[], arrSize = sizeof arr) {
     new length = mget(Vec_vectorLength, _:vec);
     new Alloc:alloc = Vec_GetVecAllocSlot(vec);
     //append the value to the alloc
-    alloc = Vec_internalAppendArray(alloc, arr, arrSize, length);
+    alloc = Vec_internalAppendArray(alloc, arr, arrSize, length, mget(Vec_increase, _:vec));
     if(alloc == NO_ALLOC) {
         return VEC_NOALLOC;
     }
@@ -371,7 +382,7 @@ stock Vec_SetValue(Vec:vec, index, value) {
     }
     if(index > Vec_GetLength(vec)) {
         if(index >= Vec_GetCapacity(vec)) {            
-            if(Vec_Resize(vec, index + VEC_DEFAULT_INCREASE) == VEC_NOALLOC) {
+            if(Vec_Resize(vec, index + mget(Vec_increase, _:vec)) == VEC_NOALLOC) {
                 return VEC_NOALLOC;
             }
         }
