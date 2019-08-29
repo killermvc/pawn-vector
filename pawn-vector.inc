@@ -258,14 +258,14 @@ stock Vec:Vec_NewFromArray(const arr[], arrSize, capacity = VEC_DEFAULT_CAPACITY
 
 stock Vec_GetLength(Vec:vec) {
     if(!IsValidVec(vec)) {
-        return -1;
+        return VEC_INVALID;
     }
     return mget(Vec_vectorLength, _:vec);
 }
 
 stock Vec_GetCapacity(Vec:vec) {
     if(!IsValidVec(vec)) {
-        return -1;
+        return VEC_INVALID;
     }
     return Malloc_SlotSize(mget(Vec_vectorSlot, _:vec));
 }
