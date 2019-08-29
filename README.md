@@ -22,16 +22,7 @@ Include in your code and begin using the library:
 
 ## Usage
 
-### Defines
-
-* `#define VEC_DEFAULT_CAPACITY    (50)`
-  * Size (in cells) of the underlying array when creating a vector
-* `#define VEC_DEFAULT_INCREASE    (5)`
-  * Amount of cells to increase the underlying array if there isn't enough space for an append
-
-You can `#define` both before including the package to change these values
-
-Documentation moved to the [wiki](https://github.com/killermvc/pawn-vector/wiki)
+You can find the documentation in the [wiki](https://github.com/killermvc/pawn-vector/wiki)
 
 ## Testing
 
