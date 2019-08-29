@@ -177,23 +177,23 @@ stock Alloc:Vec_GetVecAllocSlot(Vec:vec) {
 
 #include <YSI_Coding\y_hooks>
 hook OnScriptInit() {
-    Vec_vectorLength = malloc(10);
+    Vec_vectorLength = malloc(20);
     if(Vec_vectorLength == NO_ALLOC) {
         P:F("PAWN-VECTOR couldn't allocate memory for the vector's length");
     }
-    Vec_vectorSlot = malloc(10);
+    Vec_vectorSlot = malloc(20);
     if(Vec_vectorSlot == NO_ALLOC) {
         P:F("PAWN-VECTOR couldn't allocate memory for vectors");
     }
-    Vec_isVectorOrdered = malloc(10);
+    Vec_isVectorOrdered = malloc(20);
     if(Vec_isVectorOrdered == NO_ALLOC) {
         P:F("PAWN-VECTOR couldn't allocate memory for storing vector ordered status");
     }
-    Vec_increase = malloc(10);
-    if(Vec_releasedIDs == NO_ALLOC) {
+    Vec_increase = malloc(20);
+    if(Vec_increase == NO_ALLOC) {
         P:F("PAWN-VECTOR couldn't allocate memory for vectors' increase");
     }
-    Vec_releasedIDs = malloc(10);
+    Vec_releasedIDs = malloc(20);
     if(Vec_releasedIDs == NO_ALLOC) {
         P:F("PAWN-VECTOR couldn't allocate memory for released ids");
     }
