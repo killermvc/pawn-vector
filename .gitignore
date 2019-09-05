@@ -38,6 +38,7 @@ samp-npc
 # logs
 logs/
 server_log.txt
+log.txt
 crashinfo.txt
 
 # Ban list

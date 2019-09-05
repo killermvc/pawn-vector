@@ -78,6 +78,7 @@ Test:Remove() {
 
 Test:Delete() {
 	new Vec:vector = Vec_New();
+    ASSERT(IsValidVec(vector));
 
     Vec_Delete(vector);
     ASSERT(!IsValidVec(vector));

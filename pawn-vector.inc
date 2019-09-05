@@ -1,12 +1,12 @@
 #include <YSI_Coding\y_malloc>
 
 #if !defined VEC_DEFAULT_CAPACITY
-    #define VEC_DEFAULT_CAPACITY    (50)
+    #define VEC_DEFAULT_CAPACITY    (32)
 #endif
 
 
 #if !defined VEC_DEFAULT_INCREASE
-    #define VEC_DEFAULT_INCREASE    (5)
+    #define VEC_DEFAULT_INCREASE    (6)
 #endif
 
 /*
@@ -39,7 +39,7 @@ static  Vec_lastReleasedID = -1;
 
 static stock Alloc:Vec_internalResize(Alloc:slot, newSize, length) {
     //alloc more memory with the new size
-    new Alloc:newArr = malloc(newSize);
+    new Alloc:newArr = calloc(newSize);
     if(newArr != NO_ALLOC) {
         //copy last alloc to the newly allocated data
         Malloc_SetA(newArr, 0, mget(slot, 0), length);        
@@ -177,23 +177,23 @@ stock Alloc:Vec_GetVecAllocSlot(Vec:vec) {
 
 #include <YSI_Coding\y_hooks>
 hook OnScriptInit() {
-    Vec_vectorLength = malloc(20);
+    Vec_vectorLength = calloc(20);
     if(Vec_vectorLength == NO_ALLOC) {
         P:F("PAWN-VECTOR couldn't allocate memory for the vector's length");
     }
-    Vec_vectorSlot = malloc(20);
+    Vec_vectorSlot = calloc(20);
     if(Vec_vectorSlot == NO_ALLOC) {
         P:F("PAWN-VECTOR couldn't allocate memory for vectors");
     }
-    Vec_isVectorOrdered = malloc(20);
+    Vec_isVectorOrdered = calloc(20);
     if(Vec_isVectorOrdered == NO_ALLOC) {
         P:F("PAWN-VECTOR couldn't allocate memory for storing vector ordered status");
     }
-    Vec_increase = malloc(20);
+    Vec_increase = calloc(20);
     if(Vec_increase == NO_ALLOC) {
         P:F("PAWN-VECTOR couldn't allocate memory for vectors' increase");
     }
-    Vec_releasedIDs = malloc(20);
+    Vec_releasedIDs = calloc(20);
     if(Vec_releasedIDs == NO_ALLOC) {
         P:F("PAWN-VECTOR couldn't allocate memory for released ids");
     }
@@ -219,7 +219,7 @@ hook OnScriptExit() {
 #define Vec_GetString(%0,%1)    mget(Vec_GetVecAllocSlot((%0)), _:(%1))
 
 stock Vec:Vec_New(capacity = VEC_DEFAULT_CAPACITY, bool:ordered = false, sizeIncrease = VEC_DEFAULT_INCREASE) {
-    new Alloc:a = malloc(capacity);
+    new Alloc:a = calloc(capacity);
     new Vec:id = Vec_getNewId();
     new length = Malloc_SlotSize(Vec_vectorSlot);
     if(_:id >= length) {
@@ -238,7 +238,7 @@ stock Vec:Vec_NewFromArray(const arr[], arrSize, capacity = VEC_DEFAULT_CAPACITY
     if(capacity < arrSize) {
         capacity = arrSize + sizeIncrease;
     }
-    new Alloc:a = malloc(capacity);
+    new Alloc:a = calloc(capacity);
     new Vec:id = Vec_getNewId();
 
     new length = Malloc_SlotSize(Vec_vectorSlot);
