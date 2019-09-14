@@ -109,7 +109,7 @@ static stock Vec:Vec_getNewId() {
     return Vec_LastID-Vec:1;
 }
 
-bool:IsValidVec(Vec:vec) {
+stock bool:IsValidVec(Vec:vec) {
     if(vec >= Vec_LastID) {
         //if the id wasn't yet assigned return false
         return false;
@@ -124,7 +124,7 @@ bool:IsValidVec(Vec:vec) {
     return true;
 }
 
-static Vec_ReleaseId(Vec:id) {
+static stock Vec_ReleaseId(Vec:id) {
     if(!IsValidVec(id)) {
         return VEC_INVALID;
     }
@@ -328,8 +328,8 @@ stock Vec_AppendVec(Vec:vec, Vec:value) {
     return Vec_Append(vec, _:value);
 }
 
-stock Vec:AppendBool(Vec:vec, bool:value) {
-    return Vec_Append(vec, _:value); 
+stock Vec_AppendBool(Vec:vec, bool:value) {
+    return Vec_Append(vec, _:value);
 }
 
 stock Vec_AppendArray(Vec:vec, const arr[], arrSize = sizeof arr) {
