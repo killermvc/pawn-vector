@@ -34,7 +34,7 @@ static  Vec:Vec_LastID;
 static  Alloc:Vec_releasedIDs;
 
 //index of the last released id
-static  Vec_lastReleasedID = -1;
+static  Vec_lastReleasedID;
 
 
 static stock Alloc:Vec_internalResize(Alloc:slot, newSize, length) {
@@ -98,9 +98,9 @@ static stock Vec_internalRemove(Alloc:slot, index, bool:ordered, &length) {
 }
 
 static stock Vec:Vec_getNewId() {
-    if(Vec_lastReleasedID >= 0) {
+    if(Vec_lastReleasedID > 0) {
         //if there are released ids return one of them
-        new id = mget(Vec_releasedIDs, Vec_lastReleasedID);
+        new id = mget(Vec_releasedIDs, Vec_lastReleasedID-1);
         Vec_lastReleasedID--;
         return Vec:id;
     }
@@ -114,7 +114,7 @@ bool:IsValidVec(Vec:vec) {
         //if the id wasn't yet assigned return false
         return false;
     }
-    for(new i = 0; i <= _:Vec_lastReleasedID; i++) {
+    for(new i = 0; i < _:Vec_lastReleasedID; i++) {
         if(mget(Vec_releasedIDs, i) == _:vec) {
             //if the id is released return false
             return false;
@@ -124,7 +124,7 @@ bool:IsValidVec(Vec:vec) {
     return true;
 }
 
-static Vec_ReleaseId(Vec:id) {
+stock static Vec_ReleaseId(Vec:id) {
     if(!IsValidVec(id)) {
         return VEC_INVALID;
     }
@@ -134,7 +134,6 @@ static Vec_ReleaseId(Vec:id) {
         return VEC_OK;
     }
     //if none of the others, add the id to the free ids list
-    Vec_lastReleasedID++;
     new Alloc:ret = Vec_internalAppend(Vec_releasedIDs, _:id, Vec_lastReleasedID);
     if(ret == NO_ALLOC) {
         P:F("PAWN-VECTOR couldn't allocate memory for released id's");
@@ -411,6 +410,7 @@ stock Vec_Remove(Vec:vec, index) {
     new length = Vec_GetLength(vec);
     Vec_internalRemove(Vec_GetVecAllocSlot(vec), index, Vec_IsOrdered(vec), length);
     mset(Vec_vectorLength, _:vec, length);
+    
     return VEC_OK;
 }
 
