@@ -71,7 +71,7 @@ Test:Remove() {
 
     new Vec:vec = Vec_NewFromArray(arr, sizeof(arr));
 
-    Vec_Remove(vec, 1);
+    Vec_RemoveAt(vec, 1);
     ASSERT(Vec_GetValue(vec, 0) == 1);
     ASSERT(Vec_GetValue(vec, 1) == 3);
 }
@@ -88,7 +88,7 @@ Test:RemoveOrdered() {
     new arr[] = {1, 2, 3, 4, 5, 6};
     new Vec:vector = Vec_NewFromArray(arr, sizeof arr, VEC_DEFAULT_CAPACITY, true);
 
-    Vec_Remove(vector, 2);
+    Vec_RemoveAt(vector, 2);
     ASSERT(Vec_GetValue(vector, 0) == 1);
     ASSERT(Vec_GetValue(vector, 1) == 2);
     ASSERT(Vec_GetValue(vector, 2) == 4);
@@ -97,7 +97,7 @@ Test:RemoveOrdered() {
 }
 
 Test:SizeIncrease() {
-    new Vec:vec = Vec_New(1, false, 10);
+    new Vec:vec = Vec_New(1, false, false, false, 10);
     ASSERT(Vec_GetCapacity(vec) >= 1);
     Vec_Append(vec, 1);
     Vec_Append(vec, 2);
