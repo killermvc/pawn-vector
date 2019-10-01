@@ -560,7 +560,7 @@ stock Vec_CopyTo(Vec:vec, dest[], start = 0, end = 0, maxSize = sizeof(dest)) {
     if(end == 0 || end > maxSize) {
         end = maxSize;
     }
-    mgeta(dest, end, Vec_GetVecAllocSlot(vec), start);
+    memcpy(dest, mget(Vec_GetVecAllocSlot(vec), start), 0, (end - start)*4, end);
 }
 
 stock Vec_Reverse(Vec:vec, start = 0, end = 0) {
@@ -569,7 +569,7 @@ stock Vec_Reverse(Vec:vec, start = 0, end = 0) {
     }
 
     if(end == 0) {
-        end = Vec_GetLength(vec);
+        end = Vec_GetLength(vec)-1;
     }
 
 
@@ -587,7 +587,7 @@ stock Vec_Reverse(Vec:vec, start = 0, end = 0) {
 
     for(new i = start, j = end; i < j; i++, j--) {
         tmp = Vec_GetValue(vec, j);
-        Vec_SetValue(vec, j, Vec_GetValue(vec, start));
+        Vec_SetValue(vec, j, Vec_GetValue(vec, i));
         Vec_SetValue(vec, i, tmp);
     }
     return VEC_OK;
@@ -599,7 +599,7 @@ stock Vec_SetArray(Vec:vec, index, const array[], start = 0, end = 0, size = siz
     }
 
     if(end == 0 || end > size) {
-        end = size;
+        end = size-1;
     }
 
     if(start > end) {
