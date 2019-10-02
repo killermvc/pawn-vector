@@ -259,7 +259,7 @@ Test:Clone() {
     new
         arr[] = {1, 2, 3, 4, 5, 6},
         bool:pass = true,
-        Vec:vec = Vec_NewFromArray(arr, sizeof arr, 6, true, false, true, 10)
+        Vec:vec = Vec_NewFromArray(arr, sizeof arr, 7, true, false, true, 10)
     ;
     new Vec:vec2 = Vec_Clone(vec);
 

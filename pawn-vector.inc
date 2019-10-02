@@ -55,7 +55,7 @@ static stock Alloc:Vec_internalResize(Alloc:slot, newSize, length) {
 }
 
 static stock Alloc:Vec_internalAppend(Alloc:slot, value, &length, increase = VEC_DEFAULT_INCREASE, bool:isFixed = false) {
-    if(length <= Malloc_SlotSize(slot)) {
+    if(length < Malloc_SlotSize(slot)) {
         //if there is enough space for the new value just set it at the end
         mset(slot, length, value);
         length++;
@@ -562,7 +562,7 @@ stock Vec_AppendVector(Vec:vec, Vec:toAppend, start = 0, end = 0) {
         return VEC_NOP;
     }
 
-    if(Vec_GetLength(vec) + end - start > Vec_GetCapacity(vec)) {
+    if(Vec_GetLength(vec) + end - start >= Vec_GetCapacity(vec)) {
         if(Vec_IsFixedSize(vec)) {
             return VEC_NOP;
         }
