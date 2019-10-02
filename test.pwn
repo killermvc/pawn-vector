@@ -11,12 +11,12 @@ Test:New() {
 }
 
 Test:NewArray() {
-	new arr[] = {1,2,3};
+	new arr[] = {1, 2, 3, 4, 5, 6};
     new Vec:vec = Vec_NewFromArray(arr, sizeof arr);
     ASSERT(IsValidVec(vec));
-    ASSERT(Vec_GetValue(vec, 0) == 1);
-    ASSERT(Vec_GetValue(vec, 1) == 2);
-    ASSERT(Vec_GetValue(vec, 2) == 3);
+    for(new i = 0; i < 6; i++) {
+        ASSERT(Vec_GetValue(vec, i) == arr[i]);
+    }
     Vec_Delete(vec);
 }
 
@@ -122,13 +122,13 @@ Test:SizeIncrease() {
 }
 
 Test:SetArray() {
-    new 
+    new
         arr[] = {1, 2, 3, 4, 5, 6},
         arrToSet[] = {7, 8, 9},
         resultArr[] = {1, 2, 8, 9, 5, 6},
         Vec:vec = Vec_NewFromArray(arr, sizeof arr),
         bool:pass = true;
-    
+
     Vec_SetArray(vec, 2, arrToSet, 1);
 
     for(new i = 0; i < 6; i++) {
@@ -143,13 +143,13 @@ Test:SetArray() {
 }
 
 Test:Reverse() {
-    new 
+    new
         arr[] = {1, 2, 3, 4 ,5, 6},
         arrReversed[] = {6, 5, 4, 3, 2, 1},
         arrReversed2[] = {6, 5, 2, 3, 4, 1},
         bool:pass = true,
         Vec:vec = Vec_NewFromArray(arr, sizeof arr);
-    
+
     Vec_Reverse(vec);
 
     for(new i = 0; i < 6; i++) {
@@ -173,7 +173,7 @@ Test:Reverse() {
 }
 
 Test:CopyTo() {
-    new 
+    new
         arr[] = {1, 2, 3, 4, 5, 6},
         dest[6],
         Vec:vec = Vec_NewFromArray(arr, sizeof arr),
@@ -199,7 +199,7 @@ Test:AppendVector() {
         Vec:vec = Vec_NewFromArray(arr, sizeof arr),
         Vec:vec2 = Vec_NewFromArray(toAppend, sizeof toAppend),
         bool:pass = true;
-    
+
     Vec_AppendVector(vec, vec2, 2, 4);
 
     for(new i = 0; i < 5; i++) {
@@ -214,7 +214,7 @@ Test:AppendVector() {
 }
 
 Test:Remove() {
-    new 
+    new
         arr[] = {1, 2, 3, 4 ,3, 6},
         result[] = {1, 2, 6, 4, 3},
         bool:pass = true,
@@ -235,12 +235,12 @@ Test:Remove() {
 }
 
 Test:RemoveOrdered() {
-    new 
+    new
         arr[] = {1, 2, 3, 4, 3, 6},
         result[] = {1, 2, 4 ,3, 6},
         bool:pass = true,
         index,
-        Vec:vec = Vec_NewFromArray(arr, sizeof arr, VEC_DEFAULT_CAPACITY, false, false, true);
+        Vec:vec = Vec_NewFromArray(arr, sizeof arr, 6, false, false, true);
 
     Vec_Remove(vec, 3, index);
 
@@ -253,4 +253,31 @@ Test:RemoveOrdered() {
     ASSERT(pass && index == 2);
 
     Vec_Delete(vec);
+}
+
+Test:Clone() {
+    new
+        arr[] = {1, 2, 3, 4, 5, 6},
+        bool:pass = true,
+        Vec:vec = Vec_NewFromArray(arr, sizeof arr, 6, true, false, true, 10)
+    ;
+    new Vec:vec2 = Vec_Clone(vec);
+
+
+    for(new i = 0; i < 6; i++) {
+        printf("%d %d", Vec_GetValue(vec, i), Vec_GetValue(vec2, i));
+        if(Vec_GetValue(vec, i) != Vec_GetValue(vec2, i)) {
+            pass = false;
+        }
+    }
+
+    ASSERT(pass);
+    ASSERT(Vec_IsOrdered(vec2));
+    ASSERT(Vec_IsFixedSize(vec2));
+    ASSERT(Vec_IsOrdered(vec2));
+
+    ASSERT(Vec_GetIncrease(vec) == Vec_GetIncrease(vec2));
+
+    Vec_Delete(vec);
+    Vec_Delete(vec2);
 }

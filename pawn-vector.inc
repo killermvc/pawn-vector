@@ -47,7 +47,7 @@ static stock Alloc:Vec_internalResize(Alloc:slot, newSize, length) {
     new Alloc:newArr = calloc(newSize);
     if(newArr != NO_ALLOC) {
         //copy last alloc to the newly allocated data
-        Malloc_SetA(newArr, 0, mget(slot, 0), length);       
+        Malloc_SetA(newArr, 0, mget(slot, 0), length);
         //free old memory
         Malloc_Free(slot);
     }
@@ -55,7 +55,7 @@ static stock Alloc:Vec_internalResize(Alloc:slot, newSize, length) {
 }
 
 static stock Alloc:Vec_internalAppend(Alloc:slot, value, &length, increase = VEC_DEFAULT_INCREASE, bool:isFixed = false) {
-    if(length < Malloc_SlotSize(slot)) {
+    if(length <= Malloc_SlotSize(slot)) {
         //if there is enough space for the new value just set it at the end
         mset(slot, length, value);
         length++;
@@ -75,7 +75,7 @@ static stock Alloc:Vec_internalAppend(Alloc:slot, value, &length, increase = VEC
 }
 
 static stock Alloc:Vec_internalAppendArray(Alloc:slot, const arr[], arrSize, &length, increase = VEC_DEFAULT_INCREASE, bool:isFixed) {
-    if(length+arrSize < Malloc_SlotSize(slot)) {
+    if(length+arrSize <= Malloc_SlotSize(slot)) {
         //if there is enough space for the new value just set it at the end
         Malloc_SetA(slot, length, arr, arrSize);
         length += arrSize;
@@ -89,7 +89,7 @@ static stock Alloc:Vec_internalAppendArray(Alloc:slot, const arr[], arrSize, &le
     if(newArr != NO_ALLOC) {
         Malloc_SetA(newArr, length, arr, arrSize);
         length += arrSize;
-    }    
+    }
     return newArr;
 }
 
@@ -151,14 +151,6 @@ static stock Vec_ReleaseId(Vec:id) {
         return VEC_NOALLOC;
     }
     return VEC_OK;
-}
-
-static stock bool:Vec_IsFixedSize(Vec:vec) {
-    return bool:mget(Vec_isSizeFixed, _:vec);
-}
-
-static stock bool:Vec_IsReadOnly(Vec:vec) {
-    return bool:mget(Vec_isReadOnly, _:vec);
 }
 
 static stock Vec_resizeVectorsData(id, length) {
@@ -240,7 +232,7 @@ hook OnScriptInit() {
 
 hook OnScriptExit() {
     free(Vec_releasedIDs);
-    free(Vec_vectorLength);    
+    free(Vec_vectorLength);
     free(Vec_isOrdered);
     free(Vec_isSizeFixed);
     free(Vec_isReadOnly);
@@ -255,6 +247,25 @@ hook OnScriptExit() {
 /*
     api
 */
+
+stock bool:Vec_IsFixedSize(Vec:vec) {
+    return bool:mget(Vec_isSizeFixed, _:vec);
+}
+
+stock Vec_GetIncrease(Vec:vec) {
+    return mget(Vec_increase, _:vec);
+}
+
+stock bool:Vec_IsReadOnly(Vec:vec) {
+    return bool:mget(Vec_isReadOnly, _:vec);
+}
+
+stock bool:Vec_IsOrdered(Vec:vec) {
+    if(!IsValidVec(vec)) {
+        return false;
+    }
+    return bool:mget(Vec_isOrdered, _:vec);
+}
 
 #define Vec_GetString(%0,%1)    mget(Vec_GetVecAllocSlot((%0)), _:(%1))
 
@@ -285,7 +296,7 @@ stock Vec:Vec_NewFromArray(const arr[], arrSize, capacity = VEC_DEFAULT_CAPACITY
 
     new length = Malloc_SlotSize(Vec_vectorSlot);
     if(_:id >= length) {
-        if(Vec_resizeVectorsData(_:id, length) == VEC_NOALLOC) {    
+        if(Vec_resizeVectorsData(_:id, length) == VEC_NOALLOC) {
             return INVALID_VECTOR_ID;
         }
     }
@@ -300,6 +311,22 @@ stock Vec:Vec_NewFromArray(const arr[], arrSize, capacity = VEC_DEFAULT_CAPACITY
     return id;
 }
 
+stock Vec:Vec_Clone(Vec:vec, bool:readonly = false) {
+    printf("capacity %d", Vec_GetCapacity(vec));
+    new Vec:newVec = Vec_New(Vec_GetCapacity(vec), Vec_IsFixedSize(vec), false, Vec_IsOrdered(vec), mget(Vec_increase, _:vec));
+    if(newVec == INVALID_VECTOR_ID) {
+        return INVALID_VECTOR_ID;
+    }
+
+    Vec_AppendVector(newVec, vec);
+
+    if(readonly) {
+        mset(Vec_isReadOnly, _:newVec, 1);
+    }
+    return newVec;
+
+}
+
 stock Vec_GetLength(Vec:vec) {
     if(!IsValidVec(vec)) {
         return VEC_INVALID;
@@ -312,13 +339,6 @@ stock Vec_GetCapacity(Vec:vec) {
         return VEC_INVALID;
     }
     return Malloc_SlotSize(mget(Vec_vectorSlot, _:vec));
-}
-
-stock bool:Vec_IsOrdered(Vec:vec) {
-    if(!IsValidVec(vec)) {
-        return false;
-    }
-    return bool:mget(Vec_isOrdered, _:vec);
 }
 
 stock bool:Vec_ToggleOrdered(Vec:vec, bool:toggle) {
@@ -452,12 +472,12 @@ stock Vec_SetValue(Vec:vec, index, value) {
         if(index >= Vec_GetCapacity(vec)) {
             if(Vec_IsFixedSize(vec)) {
                 return VEC_NOP;
-            }       
+            }
             if(Vec_Resize(vec, index + mget(Vec_increase, _:vec)) == VEC_NOALLOC) {
                 return VEC_NOALLOC;
             }
         }
-        mset(Vec_vectorLength, _:vec, index+1);       
+        mset(Vec_vectorLength, _:vec, index+1);
     }
     mset(Vec_GetVecAllocSlot(vec), index, value);
     return VEC_OK;
@@ -487,7 +507,7 @@ stock Vec_RemoveAt(Vec:vec, index) {
     new length = Vec_GetLength(vec);
     Vec_internalRemove(Vec_GetVecAllocSlot(vec), index, Vec_IsOrdered(vec), length);
     mset(Vec_vectorLength, _:vec, length);
-    
+
     return VEC_OK;
 }
 
@@ -542,7 +562,7 @@ stock Vec_AppendVector(Vec:vec, Vec:toAppend, start = 0, end = 0) {
         return VEC_NOP;
     }
 
-    if(Vec_GetLength(vec) + end - start >= Vec_GetCapacity(vec)) {
+    if(Vec_GetLength(vec) + end - start > Vec_GetCapacity(vec)) {
         if(Vec_IsFixedSize(vec)) {
             return VEC_NOP;
         }
