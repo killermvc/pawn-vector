@@ -96,6 +96,20 @@ Test:Delete() {
     ASSERT(!IsValidVec(vec));
 }
 
+Test:CreateDeleteMany() {
+    new Vec:vecs[5000];
+
+    for(new i = 0; i < 5000; i++) {
+        printf("%d", i);
+        vecs[i] = Vec_New();
+    }
+
+    for(new i = 0; i < 5000; i++) {
+        printf("2, %d", i);
+        Vec_Delete(vecs[i]);
+    }
+}
+
 Test:RemoveAtOrdered() {
     new arr[] = {1, 2, 3, 4, 5, 6};
     new Vec:vec = Vec_NewFromArray(arr, sizeof arr, VEC_DEFAULT_CAPACITY, false, false, true);

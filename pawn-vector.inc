@@ -146,6 +146,7 @@ static stock Vec_ReleaseId(Vec:id) {
     }
     //if none of the others, add the id to the free ids list
     new Alloc:ret = Vec_internalAppend(Vec_releasedIDs, _:id, Vec_lastReleasedID);
+    Vec_releasedIDs = ret;
     if(ret == NO_ALLOC) {
         P:F("PAWN-VECTOR couldn't allocate memory for released id's");
         return VEC_NOALLOC;
@@ -312,7 +313,6 @@ stock Vec:Vec_NewFromArray(const arr[], arrSize, capacity = VEC_DEFAULT_CAPACITY
 }
 
 stock Vec:Vec_Clone(Vec:vec, bool:readonly = false) {
-    printf("capacity %d", Vec_GetCapacity(vec));
     new Vec:newVec = Vec_New(Vec_GetCapacity(vec), Vec_IsFixedSize(vec), false, Vec_IsOrdered(vec), mget(Vec_increase, _:vec));
     if(newVec == INVALID_VECTOR_ID) {
         return INVALID_VECTOR_ID;
@@ -652,7 +652,6 @@ stock Vec_Delete(Vec:vec) {
 
     Vec_ReleaseId(vec);
     Malloc_Free(Vec_GetVecAllocSlot(vec));
-
     mset(Vec_vectorLength, _:vec, 0);
     mset(Vec_isOrdered, _:vec, 0);
     mset(Vec_vectorSlot, _:vec, 0);
