@@ -100,12 +100,10 @@ Test:CreateDeleteMany() {
     new Vec:vecs[5000];
 
     for(new i = 0; i < 5000; i++) {
-        printf("%d", i);
         vecs[i] = Vec_New();
     }
 
     for(new i = 0; i < 5000; i++) {
-        printf("2, %d", i);
         Vec_Delete(vecs[i]);
     }
 }
