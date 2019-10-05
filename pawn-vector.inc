@@ -288,7 +288,7 @@ stock Vec:Vec_New(capacity = VEC_DEFAULT_CAPACITY, bool:isFixed = false, bool:is
     return id;
 }
 
-stock Vec:Vec_NewFromArray(const arr[], arrSize, capacity = VEC_DEFAULT_CAPACITY, bool:isFixed = false, bool:isReadOnly = false, bool:ordered = false, sizeIncrease = VEC_DEFAULT_INCREASE) {
+stock Vec:Vec_NewFromArray(const arr[], arrSize = sizeof arr, capacity = VEC_DEFAULT_CAPACITY, bool:isFixed = false, bool:isReadOnly = false, bool:ordered = false, sizeIncrease = VEC_DEFAULT_INCREASE) {
     if(capacity < arrSize) {
         capacity = arrSize + sizeIncrease;
     }
@@ -643,6 +643,27 @@ stock Vec_SetArray(Vec:vec, index, const array[], start = 0, end = 0, size = siz
 
     mseta(Vec_GetVecAllocSlot(vec), index, array[start], end);
     return VEC_OK;
+}
+
+stock bool:Vec_Find(Vec:vec, value, &index = 0) {
+    for(new i = 0; i < Vec_GetLength(vec); i++) {
+        if(Vec_GetValue(vec, i) == value) {
+            index = i;
+            return true;
+        }
+    }
+    index = -1;
+    return false;
+}
+
+stock Vec:Vec_FindAll(Vec:vec, value) {
+    new Vec:indexVector = Vec_New(2);
+    for(new i = 0; i < Vec_GetLength(vec); i++) {
+        if(Vec_GetValue(vec, i) == value) {
+            Vec_Append(indexVector, i);
+        }
+    }
+    return indexVector;
 }
 
 stock Vec_Delete(Vec:vec) {

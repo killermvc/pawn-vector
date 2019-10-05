@@ -293,3 +293,46 @@ Test:Clone() {
     Vec_Delete(vec);
     Vec_Delete(vec2);
 }
+
+Test:FindAll() {
+    new 
+        arr[] = {7, 5, 6, 4, 2, 4, 1, 3, 4, 9, 4},
+        exptectedIndexes[] = {3, 5, 8, 10},
+        bool:pass = true,
+        Vec:vec = Vec_NewFromArray(arr);
+
+    new Vec:indexVec = Vec_FindAll(vec, 4);
+
+    ASSERT(Vec_GetLength(indexVec) == 4);
+
+    for(new i = 0; i < 4; i++) {
+        if(Vec_GetValue(indexVec, i) != exptectedIndexes[i]) {
+            pass = false;
+        }
+    }
+    ASSERT(pass);
+
+    Vec_Delete(indexVec);
+
+    indexVec = Vec_FindAll(vec, 15);
+
+    ASSERT(Vec_GetLength(indexVec) == 0);
+
+    Vec_Delete(vec);
+    Vec_Delete(indexVec);    
+}
+
+Test:find() {
+    new 
+        arr[] = {1, 2, 3, 4, 5, 6},
+        Vec:vec = Vec_NewFromArray(arr),
+        index;
+
+    ASSERT(Vec_Find(vec, 3, index));
+    ASSERT(index == 2);
+
+    ASSERT(!Vec_Find(vec, 7, index));
+    ASSERT(index == -1);
+
+    Vec_Delete(vec);
+}
