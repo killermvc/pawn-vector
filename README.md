@@ -17,7 +17,7 @@ sampctl package install killermvc/pawn-vector
 Include in your code and begin using the library:
 
 ```pawn
-#include <pawn-vector>
+#include <vector>
 ```
 
 ## Usage

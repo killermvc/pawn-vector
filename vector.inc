@@ -1,3 +1,13 @@
+#if defined _inc_vector
+    #undef _inc_vector
+#endif
+
+#if defined _vector_included
+    #endinput
+#endif
+
+#define _vector_included
+
 #include <YSI_Coding\y_malloc>
 
 #if !defined VEC_DEFAULT_CAPACITY

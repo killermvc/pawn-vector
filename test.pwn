@@ -1,6 +1,6 @@
 #define RUN_TESTS
 #include <a_samp>
-#include "pawn-vector.inc"
+#include "vector.inc"
 #include <YSI_Core\y_testing>
 
 
@@ -271,13 +271,11 @@ Test:Clone() {
     new
         arr[] = {1, 2, 3, 4, 5, 6},
         bool:pass = true,
-        Vec:vec = Vec_NewFromArray(arr, sizeof arr, 7, true, false, true, 10)
-    ;
+        Vec:vec = Vec_NewFromArray(arr, sizeof arr, 7, true, false, true, 10);
+
     new Vec:vec2 = Vec_Clone(vec);
 
-
     for(new i = 0; i < 6; i++) {
-        printf("%d %d", Vec_GetValue(vec, i), Vec_GetValue(vec2, i));
         if(Vec_GetValue(vec, i) != Vec_GetValue(vec2, i)) {
             pass = false;
         }
