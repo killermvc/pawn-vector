@@ -111,6 +111,7 @@ static stock Vec_internalRemove(Alloc:slot, index, bool:ordered, &length) {
     if(!ordered) {
         mset(slot, index, mget(slot, length-1));
         length--;
+        mset(slot, length-1, 0);
         return VEC_OK;
     }
     Malloc_SetA(slot, index, mget(slot, index+1), length-index);
@@ -131,7 +132,7 @@ static stock Vec:Vec_getNewId() {
 }
 
 stock bool:IsValidVec(Vec:vec) {
-    if(vec >= Vec_LastID) {
+    if(vec >= Vec_LastID || vec == INVALID_VECTOR_ID) {
         //if the id wasn't yet assigned return false
         return false;
     }
@@ -538,6 +539,49 @@ stock Vec_Remove(Vec:vec, value, &index = 0) {
         }
     }
     return VEC_NOT_FOUND;
+}
+
+stock Vec_RemoveLast(Vec:vec, value, &index = 0) {
+    if(!IsValidVec(vec)) {
+        return VEC_INVALID;
+    }
+
+    if(Vec_IsReadOnly(vec)) {
+        return VEC_NOP;
+    }
+
+    for new i = Vec_GetLength(vec) - 1; i >= 0; i-- {
+        if(Vec_GetValue(vec, i) == value) {
+            Vec_RemoveAt(vec, i);
+            index = i;
+            return VEC_OK
+        }
+    }
+    return VEC_NOT_FOUND;
+}
+
+stock Vec_RemoveAll(Vec:vec, value, &Vec:indexes = INVALID_VECTOR_ID) {
+    if(!IsValidVec(vec)) {
+        return VEC_INVALID;
+    }
+
+    if(Vec_IsReadOnly(vec)) {
+        return VEC_NOP;
+    }
+
+    if(!IsValidVec(indexes) && indexes != INVALID_VECTOR_ID) {
+        indexes = Vec_New(2);
+    }
+
+    for(new i = 0, j = Vec_GetLength(vec); i < j; i++) {
+        if(Vec_GetValue(vec, i) == value) {
+            Vec_RemoveAt(vec, i);
+            if(indexes != INVALID_VECTOR_ID) {
+                append(indexes, i);
+            }
+        }
+    }
+    return VEC_OK;
 }
 
 stock Vec_ChangeString(Vec:vec, const str[], len = -1) {
