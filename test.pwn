@@ -293,7 +293,7 @@ Test:Clone() {
 }
 
 Test:FindAll() {
-    new 
+    new
         arr[] = {7, 5, 6, 4, 2, 4, 1, 3, 4, 9, 4},
         exptectedIndexes[] = {3, 5, 8, 10},
         bool:pass = true,
@@ -317,11 +317,11 @@ Test:FindAll() {
     ASSERT(Vec_GetLength(indexVec) == 0);
 
     Vec_Delete(vec);
-    Vec_Delete(indexVec);    
+    Vec_Delete(indexVec);
 }
 
 Test:find() {
-    new 
+    new
         arr[] = {1, 2, 3, 4, 5, 6},
         Vec:vec = Vec_NewFromArray(arr),
         index;
@@ -331,6 +331,58 @@ Test:find() {
 
     ASSERT(!Vec_Find(vec, 7, index));
     ASSERT(index == -1);
+
+    Vec_Delete(vec);
+}
+
+Test:removeLast() {
+    new
+        arr[] = {9, 8, 3, 8, 4, 6 ,8 ,1 ,6},
+        Vec:vec = Vec_NewFromArray(arr),
+        res[] =  {9, 8, 3, 8, 4, 6, 6, 1},
+        bool:pass = true,
+        indx;
+
+    Vec_RemoveLast(vec, 8, indx);
+
+    for(new i = 0; i < 8; i++) {
+        if(Vec_GetValue(vec, i) != res[i]) {
+            pass = false;
+        }
+    }
+
+    ASSERT(indx == 6 && pass);
+
+    Vec_Delete(vec);
+}
+
+Test:RemoveAll() {
+    new
+        arr[] = {9, 8, 3, 8, 4, 6 ,8 ,1 ,6},
+        Vec:vec = Vec_NewFromArray(arr),
+        res[] =  {9, 6, 3, 1, 4, 6},
+        expectedIndexes[] = {1, 3, 6},
+        bool:pass = true,
+        Vec:indexes;
+
+    Vec_RemoveAll(vec, 8, indexes);
+
+    for(new i = 0; i < 6; i++) {
+        if(Vec_GetValue(vec, i) != res[i]) {
+            pass = false;
+        }
+    }
+
+    ASSERT(pass);
+    pass = true;
+
+    for(new i = 0; i < 3; i++) {
+        if(Vec_GetValue(indexes, i) != expectedIndexes[i]) {
+            pass = false;
+        }
+    }
+
+    ASSERT(pass);
 
     Vec_Delete(vec);
 }

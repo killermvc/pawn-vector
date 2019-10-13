@@ -111,7 +111,7 @@ static stock Vec_internalRemove(Alloc:slot, index, bool:ordered, &length) {
     if(!ordered) {
         mset(slot, index, mget(slot, length-1));
         length--;
-        mset(slot, length-1, 0);
+        mset(slot, length, 0);
         return VEC_OK;
     }
     Malloc_SetA(slot, index, mget(slot, index+1), length-index);
@@ -550,11 +550,11 @@ stock Vec_RemoveLast(Vec:vec, value, &index = 0) {
         return VEC_NOP;
     }
 
-    for new i = Vec_GetLength(vec) - 1; i >= 0; i-- {
+    for(new i = Vec_GetLength(vec) - 1; i >= 0; i--) {
         if(Vec_GetValue(vec, i) == value) {
             Vec_RemoveAt(vec, i);
             index = i;
-            return VEC_OK
+            return VEC_OK;
         }
     }
     return VEC_NOT_FOUND;
@@ -577,7 +577,7 @@ stock Vec_RemoveAll(Vec:vec, value, &Vec:indexes = INVALID_VECTOR_ID) {
         if(Vec_GetValue(vec, i) == value) {
             Vec_RemoveAt(vec, i);
             if(indexes != INVALID_VECTOR_ID) {
-                append(indexes, i);
+                Vec_Append(indexes, i);
             }
         }
     }
