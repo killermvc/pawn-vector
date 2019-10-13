@@ -338,7 +338,7 @@ Test:find() {
     Vec_Delete(vec);
 }
 
-Test:removeLast() {
+Test:RemoveLast() {
     new
         arr[] = {9, 8, 3, 8, 4, 6 ,8 ,1 ,6},
         Vec:vec = Vec_NewFromArray(arr),
@@ -354,6 +354,21 @@ Test:removeLast() {
     }
 
     ASSERT(pass);
+
+    Vec_Delete(vec);
+}
+
+Test:FindLast() {
+    new
+        arr[] = {9, 8, 3, 8, 4, 6 ,8 ,1 ,6},
+        Vec:vec = Vec_NewFromArray(arr),
+        index;
+
+    new ret = Vec_FindLast(vec, 8, index);
+    ASSERT(ret == VEC_OK && index == 6);
+
+    ret = Vec_FindLast(vec, 15);
+    ASSERT(ret == VEC_NOT_FOUND);
 
     Vec_Delete(vec);
 }

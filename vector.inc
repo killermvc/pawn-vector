@@ -757,6 +757,20 @@ stock bool:Vec_Find(Vec:vec, value, &index = 0) {
     return false;
 }
 
+stock Vec_FindLast(Vec:vec, value, &index = 0) {
+    if(!Vec_IsValid(vec)) {
+        return VEC_INVALID;
+    }
+
+    for(new i = Vec_GetLength(vec) - 1; i >= 0; i--) {
+        if(Vec_GetValue(vec, i) == value) {
+            index = i;
+            return VEC_OK;
+        }
+    }
+    return VEC_NOT_FOUND;
+}
+
 stock Vec:Vec_FindAll(Vec:vec, value) {
     if(!Vec_IsValid(vec)) {
         return INVALID_VECTOR_ID;
