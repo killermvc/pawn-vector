@@ -261,14 +261,23 @@ hook OnScriptExit() {
 */
 
 stock bool:Vec_IsFixedSize(Vec:vec) {
+    if(!Vec_IsValid(vec)) {
+        return false;
+    }
     return bool:mget(Vec_isSizeFixed, _:vec);
 }
 
 stock Vec_GetIncrease(Vec:vec) {
+    if(!Vec_IsValid(vec)) {
+        return VEC_INVALID;
+    }
     return mget(Vec_increase, _:vec);
 }
 
 stock bool:Vec_IsReadOnly(Vec:vec) {
+    if(!Vec_IsValid(vec)) {
+        return false;
+    }
     return bool:mget(Vec_isReadOnly, _:vec);
 }
 
@@ -625,6 +634,10 @@ stock Vec_ChangeString(Vec:vec, const str[], len = -1) {
 }
 
 stock Vec_AppendVector(Vec:vec, Vec:toAppend, start = 0, end = 0) {
+    if(!Vec_IsValid(vec)) {
+        return VEC_INVALID;
+    }
+
     if(end == 0) {
         end = Vec_GetLength(toAppend);
     }
@@ -648,13 +661,22 @@ stock Vec_AppendVector(Vec:vec, Vec:toAppend, start = 0, end = 0) {
 }
 
 stock Vec_CopyTo(Vec:vec, dest[], start = 0, end = 0, maxSize = sizeof(dest)) {
+    if(!Vec_IsValid(vec)) {
+        return VEC_INVALID;
+    }
+
     if(end == 0 || end > maxSize) {
         end = maxSize;
     }
     memcpy(dest, mget(Vec_GetVecAllocSlot(vec), start), 0, (end - start)*4, end);
+    return VEC_OK;
 }
 
 stock Vec_Reverse(Vec:vec, start = 0, end = 0) {
+    if(!Vec_IsValid(vec)) {
+        return VEC_INVALID;
+    }
+
     if(Vec_IsReadOnly(vec)) {
         return VEC_NOP;
     }
@@ -685,6 +707,10 @@ stock Vec_Reverse(Vec:vec, start = 0, end = 0) {
 }
 
 stock Vec_SetArray(Vec:vec, index, const array[], start = 0, end = 0, size = sizeof(array)) {
+    if(!Vec_IsValid(vec)) {
+        return VEC_INVALID;
+    }
+
     if(Vec_IsReadOnly(vec)) {
         return VEC_NOP;
     }
@@ -717,6 +743,10 @@ stock Vec_SetArray(Vec:vec, index, const array[], start = 0, end = 0, size = siz
 }
 
 stock bool:Vec_Find(Vec:vec, value, &index = 0) {
+    if(!Vec_IsValid(vec)) {
+        return false;
+    }
+
     for(new i = 0; i < Vec_GetLength(vec); i++) {
         if(Vec_GetValue(vec, i) == value) {
             index = i;
@@ -728,6 +758,10 @@ stock bool:Vec_Find(Vec:vec, value, &index = 0) {
 }
 
 stock Vec:Vec_FindAll(Vec:vec, value) {
+    if(!Vec_IsValid(vec)) {
+        return INVALID_VECTOR_ID;
+    }
+
     new Vec:indexVector = Vec_New(2);
     for(new i = 0; i < Vec_GetLength(vec); i++) {
         if(Vec_GetValue(vec, i) == value) {
