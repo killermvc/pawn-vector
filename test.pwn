@@ -6,14 +6,14 @@
 
 Test:New() {
 	new Vec:vec = Vec_New();
-    ASSERT(IsValidVec(vec));
+    ASSERT(Vec_IsValid(vec));
     Vec_Delete(vec);
 }
 
 Test:NewArray() {
 	new arr[] = {1, 2, 3, 4, 5, 6};
     new Vec:vec = Vec_NewFromArray(arr, sizeof arr);
-    ASSERT(IsValidVec(vec));
+    ASSERT(Vec_IsValid(vec));
     for(new i = 0; i < 6; i++) {
         ASSERT(Vec_GetValue(vec, i) == arr[i]);
     }
@@ -90,10 +90,10 @@ Test:RemoveAt() {
 
 Test:Delete() {
 	new Vec:vec = Vec_New();
-    ASSERT(IsValidVec(vec));
+    ASSERT(Vec_IsValid(vec));
 
     Vec_Delete(vec);
-    ASSERT(!IsValidVec(vec));
+    ASSERT(!Vec_IsValid(vec));
 }
 
 Test:CreateDeleteMany() {

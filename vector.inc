@@ -131,7 +131,7 @@ static stock Vec:Vec_getNewId() {
     return Vec_LastID-Vec:1;
 }
 
-stock bool:IsValidVec(Vec:vec) {
+stock bool:Vec_IsValid(Vec:vec) {
     if(vec >= Vec_LastID || vec == INVALID_VECTOR_ID) {
         //if the id wasn't yet assigned return false
         return false;
@@ -147,7 +147,7 @@ stock bool:IsValidVec(Vec:vec) {
 }
 
 static stock Vec_ReleaseId(Vec:id) {
-    if(!IsValidVec(id)) {
+    if(!Vec_IsValid(id)) {
         return VEC_INVALID;
     }
     if(id == Vec_LastID-Vec:1) {
@@ -273,7 +273,7 @@ stock bool:Vec_IsReadOnly(Vec:vec) {
 }
 
 stock bool:Vec_IsOrdered(Vec:vec) {
-    if(!IsValidVec(vec)) {
+    if(!Vec_IsValid(vec)) {
         return false;
     }
     return bool:mget(Vec_isOrdered, _:vec);
@@ -341,21 +341,21 @@ stock Vec:Vec_Clone(Vec:vec, bool:readonly = false) {
 }
 
 stock Vec_GetLength(Vec:vec) {
-    if(!IsValidVec(vec)) {
+    if(!Vec_IsValid(vec)) {
         return VEC_INVALID;
     }
     return mget(Vec_vectorLength, _:vec);
 }
 
 stock Vec_GetCapacity(Vec:vec) {
-    if(!IsValidVec(vec)) {
+    if(!Vec_IsValid(vec)) {
         return VEC_INVALID;
     }
     return Malloc_SlotSize(mget(Vec_vectorSlot, _:vec));
 }
 
 stock Vec_ToggleOrdered(Vec:vec, bool:toggle) {
-    if(!IsValidVec(vec)) {
+    if(!Vec_IsValid(vec)) {
         return VEC_INVALID;
     }
     mset(Vec_isOrdered, _:vec, _:toggle);
@@ -363,7 +363,7 @@ stock Vec_ToggleOrdered(Vec:vec, bool:toggle) {
 }
 
 stock Vec_ChangeIncrease(Vec:vec, increase) {
-    if(!IsValidVec(vec)) {
+    if(!Vec_IsValid(vec)) {
         return VEC_INVALID;
     }
     mset(Vec_increase, _:vec, increase);
@@ -371,7 +371,7 @@ stock Vec_ChangeIncrease(Vec:vec, increase) {
 }
 
 stock Vec_ToggleReadOnly(Vec:vec, bool:toggle) {
-    if(!IsValidVec(vec)) {
+    if(!Vec_IsValid(vec)) {
         return VEC_INVALID;
     }
     mset(Vec_isReadOnly, _:vec, _:toggle);
@@ -379,7 +379,7 @@ stock Vec_ToggleReadOnly(Vec:vec, bool:toggle) {
 }
 
 stock Vec_ToggleFixedSize(Vec:vec, bool:toggle) {
-    if(!IsValidVec(vec)) {
+    if(!Vec_IsValid(vec)) {
         return VEC_INVALID;
     }
     mset(Vec_isSizeFixed, _:vec, _:toggle);
@@ -387,7 +387,7 @@ stock Vec_ToggleFixedSize(Vec:vec, bool:toggle) {
 }
 
 stock Vec_Resize(Vec:vec, newSize) {
-    if(!IsValidVec(vec)) {
+    if(!Vec_IsValid(vec)) {
         return VEC_INVALID;
     }
     if(Vec_IsReadOnly(vec)) {
@@ -413,7 +413,7 @@ stock Vec_Resize(Vec:vec, newSize) {
 }
 
 stock Vec_Append(Vec:vec, value) {
-    if(!IsValidVec(vec)) {
+    if(!Vec_IsValid(vec)) {
         return VEC_INVALID;
     }
 
@@ -448,7 +448,7 @@ stock Vec_AppendBool(Vec:vec, bool:value) {
 }
 
 stock Vec_AppendArray(Vec:vec, const arr[], arrSize = sizeof arr) {
-    if(!IsValidVec(vec)) {
+    if(!Vec_IsValid(vec)) {
         return VEC_INVALID;
     }
 
@@ -475,7 +475,7 @@ stock Vec_AppendString(Vec:vec, const str[], arrSize = sizeof str) {
 }
 
 stock Vec_GetValue(Vec:vec, index) {
-    if(!IsValidVec(vec)) {
+    if(!Vec_IsValid(vec)) {
         return VEC_INVALID;
     }
     if(index >= Vec_GetCapacity(vec)) {
@@ -497,7 +497,7 @@ stock bool:Vec_GetValueFloat(Vec:vec, index) {
 }
 
 stock Vec_SetValue(Vec:vec, index, value) {
-    if(!IsValidVec(vec)) {
+    if(!Vec_IsValid(vec)) {
         return VEC_INVALID;
     }
 
@@ -533,7 +533,7 @@ stock Vec_SetValueBool(Vec:vec, index, bool:value) {
 }
 
 stock Vec_RemoveAt(Vec:vec, index) {
-    if(!IsValidVec(vec)) {
+    if(!Vec_IsValid(vec)) {
         return VEC_INVALID;
     }
 
@@ -549,7 +549,7 @@ stock Vec_RemoveAt(Vec:vec, index) {
 }
 
 stock Vec_Remove(Vec:vec, value, &index = 0) {
-    if(!IsValidVec(vec)) {
+    if(!Vec_IsValid(vec)) {
         return VEC_INVALID;
     }
 
@@ -568,7 +568,7 @@ stock Vec_Remove(Vec:vec, value, &index = 0) {
 }
 
 stock Vec_RemoveLast(Vec:vec, value, &index = 0) {
-    if(!IsValidVec(vec)) {
+    if(!Vec_IsValid(vec)) {
         return VEC_INVALID;
     }
 
@@ -587,7 +587,7 @@ stock Vec_RemoveLast(Vec:vec, value, &index = 0) {
 }
 
 stock Vec_RemoveAll(Vec:vec, value, &Vec:indexes = INVALID_VECTOR_ID) {
-    if(!IsValidVec(vec)) {
+    if(!Vec_IsValid(vec)) {
         return VEC_INVALID;
     }
 
@@ -595,7 +595,7 @@ stock Vec_RemoveAll(Vec:vec, value, &Vec:indexes = INVALID_VECTOR_ID) {
         return VEC_NOP;
     }
 
-    if(!IsValidVec(indexes) && indexes != INVALID_VECTOR_ID) {
+    if(!Vec_IsValid(indexes) && indexes != INVALID_VECTOR_ID) {
         indexes = Vec_New(2);
     }
 
@@ -611,7 +611,7 @@ stock Vec_RemoveAll(Vec:vec, value, &Vec:indexes = INVALID_VECTOR_ID) {
 }
 
 stock Vec_ChangeString(Vec:vec, const str[], len = -1) {
-    if(!IsValidVec(vec)) {
+    if(!Vec_IsValid(vec)) {
         return VEC_INVALID;
     }
 
@@ -747,7 +747,7 @@ stock Vec:Vec_FindAll(Vec:vec, value) {
 }
 
 stock Vec_Delete(Vec:vec) {
-    if(!IsValidVec(vec)) {
+    if(!Vec_IsValid(vec)) {
         return VEC_INVALID;
     }
 
