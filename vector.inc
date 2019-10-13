@@ -548,7 +548,7 @@ stock Vec_RemoveAt(Vec:vec, index) {
     return VEC_OK;
 }
 
-stock Vec_Remove(Vec:vec, value, &index = 0) {
+stock Vec_Remove(Vec:vec, value) {
     if(!Vec_IsValid(vec)) {
         return VEC_INVALID;
     }
@@ -560,14 +560,13 @@ stock Vec_Remove(Vec:vec, value, &index = 0) {
     for(new i = 0, j = Vec_GetLength(vec); i < j; i++) {
         if(Vec_GetValue(vec, i) == value) {
             Vec_RemoveAt(vec, i);
-            index = i;
             return VEC_OK;
         }
     }
     return VEC_NOT_FOUND;
 }
 
-stock Vec_RemoveLast(Vec:vec, value, &index = 0) {
+stock Vec_RemoveLast(Vec:vec, value) {
     if(!Vec_IsValid(vec)) {
         return VEC_INVALID;
     }
@@ -579,14 +578,13 @@ stock Vec_RemoveLast(Vec:vec, value, &index = 0) {
     for(new i = Vec_GetLength(vec) - 1; i >= 0; i--) {
         if(Vec_GetValue(vec, i) == value) {
             Vec_RemoveAt(vec, i);
-            index = i;
             return VEC_OK;
         }
     }
     return VEC_NOT_FOUND;
 }
 
-stock Vec_RemoveAll(Vec:vec, value, &Vec:indexes = INVALID_VECTOR_ID) {
+stock Vec_RemoveAll(Vec:vec, value) {
     if(!Vec_IsValid(vec)) {
         return VEC_INVALID;
     }
@@ -595,16 +593,9 @@ stock Vec_RemoveAll(Vec:vec, value, &Vec:indexes = INVALID_VECTOR_ID) {
         return VEC_NOP;
     }
 
-    if(!Vec_IsValid(indexes) && indexes != INVALID_VECTOR_ID) {
-        indexes = Vec_New(2);
-    }
-
     for(new i = 0, j = Vec_GetLength(vec); i < j; i++) {
         if(Vec_GetValue(vec, i) == value) {
             Vec_RemoveAt(vec, i);
-            if(indexes != INVALID_VECTOR_ID) {
-                Vec_Append(indexes, i);
-            }
         }
     }
     return VEC_OK;
@@ -742,6 +733,10 @@ stock Vec:Vec_FindAll(Vec:vec, value) {
         if(Vec_GetValue(vec, i) == value) {
             Vec_Append(indexVector, i);
         }
+    }
+    if(Vec_GetLength(indexVector) == 0) {
+        Vec_Delete(indexVector);
+        indexVector = INVALID_VECTOR_ID;
     }
     return indexVector;
 }

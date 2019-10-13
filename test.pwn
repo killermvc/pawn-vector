@@ -231,10 +231,9 @@ Test:Remove() {
         arr[] = {1, 2, 3, 4 ,3, 6},
         result[] = {1, 2, 6, 4, 3},
         bool:pass = true,
-        index,
         Vec:vec = Vec_NewFromArray(arr, sizeof arr);
 
-    Vec_Remove(vec, 3, index);
+    Vec_Remove(vec, 3);
 
     for(new i = 0; i < 5; i++) {
         if(Vec_GetValue(vec, i) != result[i]) {
@@ -242,7 +241,7 @@ Test:Remove() {
         }
     }
 
-    ASSERT(pass && index == 2);
+    ASSERT(pass);
 
     Vec_Delete(vec);
 }
@@ -252,12 +251,11 @@ Test:RemoveOrdered() {
         arr[] = {1, 2, 3, 4, 3, 6},
         result[] = {1, 2, 4 ,3, 6},
         bool:pass = true,
-        index,
         Vec:vec = Vec_NewFromArray(arr, 6);
 
     Vec_ToggleOrdered(vec, true);
 
-    Vec_Remove(vec, 3, index);
+    Vec_Remove(vec, 3);
 
     for(new i = 0; i < 5; i++) {
         if(Vec_GetValue(vec, i) != result[i]) {
@@ -265,7 +263,7 @@ Test:RemoveOrdered() {
         }
     }
 
-    ASSERT(pass && index == 2);
+    ASSERT(pass);
 
     Vec_Delete(vec);
 }
@@ -319,7 +317,7 @@ Test:FindAll() {
 
     indexVec = Vec_FindAll(vec, 15);
 
-    ASSERT(Vec_GetLength(indexVec) == 0);
+    ASSERT(indexVec == INVALID_VECTOR_ID);
 
     Vec_Delete(vec);
     Vec_Delete(indexVec);
@@ -345,10 +343,9 @@ Test:removeLast() {
         arr[] = {9, 8, 3, 8, 4, 6 ,8 ,1 ,6},
         Vec:vec = Vec_NewFromArray(arr),
         res[] =  {9, 8, 3, 8, 4, 6, 6, 1},
-        bool:pass = true,
-        indx;
+        bool:pass = true;
 
-    Vec_RemoveLast(vec, 8, indx);
+    Vec_RemoveLast(vec, 8);
 
     for(new i = 0; i < 8; i++) {
         if(Vec_GetValue(vec, i) != res[i]) {
@@ -356,7 +353,7 @@ Test:removeLast() {
         }
     }
 
-    ASSERT(indx == 6 && pass);
+    ASSERT(pass);
 
     Vec_Delete(vec);
 }
@@ -366,11 +363,9 @@ Test:RemoveAll() {
         arr[] = {9, 8, 3, 8, 4, 6 ,8 ,1 ,6},
         Vec:vec = Vec_NewFromArray(arr),
         res[] =  {9, 6, 3, 1, 4, 6},
-        expectedIndexes[] = {1, 3, 6},
-        bool:pass = true,
-        Vec:indexes;
+        bool:pass = true;
 
-    Vec_RemoveAll(vec, 8, indexes);
+    Vec_RemoveAll(vec, 8);
 
     for(new i = 0; i < 6; i++) {
         if(Vec_GetValue(vec, i) != res[i]) {
@@ -379,15 +374,5 @@ Test:RemoveAll() {
     }
 
     ASSERT(pass);
-    pass = true;
-
-    for(new i = 0; i < 3; i++) {
-        if(Vec_GetValue(indexes, i) != expectedIndexes[i]) {
-            pass = false;
-        }
-    }
-
-    ASSERT(pass);
-
     Vec_Delete(vec);
 }
