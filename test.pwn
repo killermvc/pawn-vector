@@ -110,7 +110,8 @@ Test:CreateDeleteMany() {
 
 Test:RemoveAtOrdered() {
     new arr[] = {1, 2, 3, 4, 5, 6};
-    new Vec:vec = Vec_NewFromArray(arr, sizeof arr, VEC_DEFAULT_CAPACITY, false, false, true);
+    new Vec:vec = Vec_NewFromArray(arr, VEC_DEFAULT_CAPACITY);
+    Vec_ToggleOrdered(vec, true);
 
     Vec_RemoveAt(vec, 2);
     ASSERT(Vec_GetValue(vec, 0) == 1);
@@ -123,7 +124,7 @@ Test:RemoveAtOrdered() {
 }
 
 Test:SizeIncrease() {
-    new Vec:vec = Vec_New(1, false, false, false, 10);
+    new Vec:vec = Vec_New(1, 10);
 
     ASSERT(Vec_GetCapacity(vec) >= 1);
     Vec_Append(vec, 1);
@@ -252,7 +253,9 @@ Test:RemoveOrdered() {
         result[] = {1, 2, 4 ,3, 6},
         bool:pass = true,
         index,
-        Vec:vec = Vec_NewFromArray(arr, sizeof arr, 6, false, false, true);
+        Vec:vec = Vec_NewFromArray(arr, 6);
+
+    Vec_ToggleOrdered(vec, true);
 
     Vec_Remove(vec, 3, index);
 
@@ -271,7 +274,10 @@ Test:Clone() {
     new
         arr[] = {1, 2, 3, 4, 5, 6},
         bool:pass = true,
-        Vec:vec = Vec_NewFromArray(arr, sizeof arr, 7, true, false, true, 10);
+        Vec:vec = Vec_NewFromArray(arr, 7, 10);
+
+    Vec_ToggleOrdered(vec, true);
+    Vec_ToggleFixedSize(vec, true);
 
     new Vec:vec2 = Vec_Clone(vec);
 
@@ -284,7 +290,6 @@ Test:Clone() {
     ASSERT(pass);
     ASSERT(Vec_IsOrdered(vec2));
     ASSERT(Vec_IsFixedSize(vec2));
-    ASSERT(Vec_IsOrdered(vec2));
 
     ASSERT(Vec_GetIncrease(vec) == Vec_GetIncrease(vec2));
 

@@ -221,7 +221,7 @@ hook OnScriptInit() {
     }
     Vec_isOrdered = calloc(20);
     if(Vec_isOrdered == NO_ALLOC) {
-        P:F("PAWN-VECTOR couldn't allocate memory for storing vector ordered status");
+        P:F("PAWN-VECTOR couldn't allocate memory for storing vector ordered property");
     }
     Vec_increase = calloc(20);
     if(Vec_increase == NO_ALLOC) {
@@ -233,11 +233,11 @@ hook OnScriptInit() {
     }
     Vec_isSizeFixed = calloc(20);
     if(Vec_isSizeFixed == NO_ALLOC) {
-        P:F("PAWN-VECTOR Couldn't allocate memory for vectors size");
+        P:F("PAWN-VECTOR Couldn't allocate memory for vectors fixedSize property");
     }
     Vec_isReadOnly = calloc(20);
     if(Vec_isReadOnly == NO_ALLOC) {
-        P:F("PAWN-VECTOR Couldn't allocate memory for vectors readonly");
+        P:F("PAWN-VECTOR Couldn't allocate memory for vectors readonly property");
     }
     return 1;
 }
@@ -281,7 +281,7 @@ stock bool:Vec_IsOrdered(Vec:vec) {
 
 #define Vec_GetString(%0,%1)    mget(Vec_GetVecAllocSlot((%0)), _:(%1))
 
-stock Vec:Vec_New(capacity = VEC_DEFAULT_CAPACITY, bool:isFixed = false, bool:isReadOnly = false, bool:ordered = false, sizeIncrease = VEC_DEFAULT_INCREASE) {
+stock Vec:Vec_New(capacity = VEC_DEFAULT_CAPACITY, sizeIncrease = VEC_DEFAULT_INCREASE) {
     new Alloc:a = calloc(capacity);
     new Vec:id = Vec_getNewId();
     new length = Malloc_SlotSize(Vec_vectorSlot);
@@ -292,14 +292,14 @@ stock Vec:Vec_New(capacity = VEC_DEFAULT_CAPACITY, bool:isFixed = false, bool:is
     }
     mset(Vec_vectorLength, id, 0);
     mset(Vec_increase, id, sizeIncrease);
-    mset(Vec_isOrdered, id, _:ordered);
+    mset(Vec_isOrdered, id, 0);
     mset(Vec_vectorSlot, id, _:a);
-    mset(Vec_isSizeFixed, id, _:isFixed);
-    mset(Vec_isReadOnly, id, _:isReadOnly);
+    mset(Vec_isSizeFixed, id, 0);
+    mset(Vec_isReadOnly, id, 0);
     return id;
 }
 
-stock Vec:Vec_NewFromArray(const arr[], arrSize = sizeof arr, capacity = VEC_DEFAULT_CAPACITY, bool:isFixed = false, bool:isReadOnly = false, bool:ordered = false, sizeIncrease = VEC_DEFAULT_INCREASE) {
+stock Vec:Vec_NewFromArray(const arr[], capacity = VEC_DEFAULT_CAPACITY, sizeIncrease = VEC_DEFAULT_INCREASE, arrSize = sizeof arr) {
     if(capacity < arrSize) {
         capacity = arrSize + sizeIncrease;
     }
@@ -312,19 +312,21 @@ stock Vec:Vec_NewFromArray(const arr[], arrSize = sizeof arr, capacity = VEC_DEF
             return INVALID_VECTOR_ID;
         }
     }
-    mset(Vec_isOrdered, id, _:ordered);
+    mset(Vec_isOrdered, id, 0);
     length = 0;
-    a = Vec_internalAppendArray(a, arr, arrSize, length, sizeIncrease, isFixed);
+    a = Vec_internalAppendArray(a, arr, arrSize, length, sizeIncrease, false);
     mset(Vec_vectorSlot, id, _:a);
     mset(Vec_increase, id, sizeIncrease);
     mset(Vec_vectorLength, id, length);
-    mset(Vec_isSizeFixed, id, _:isFixed);
-    mset(Vec_isReadOnly, id, _:isReadOnly);
+    mset(Vec_isSizeFixed, id, 0);
+    mset(Vec_isReadOnly, id, 0);
     return id;
 }
 
 stock Vec:Vec_Clone(Vec:vec, bool:readonly = false) {
-    new Vec:newVec = Vec_New(Vec_GetCapacity(vec), Vec_IsFixedSize(vec), false, Vec_IsOrdered(vec), mget(Vec_increase, _:vec));
+    new Vec:newVec = Vec_New(Vec_GetCapacity(vec), mget(Vec_increase, _:vec));
+    Vec_ToggleFixedSize(newVec, Vec_IsFixedSize(vec));
+    Vec_ToggleOrdered(newVec, Vec_IsOrdered(vec));
     if(newVec == INVALID_VECTOR_ID) {
         return INVALID_VECTOR_ID;
     }
@@ -352,11 +354,35 @@ stock Vec_GetCapacity(Vec:vec) {
     return Malloc_SlotSize(mget(Vec_vectorSlot, _:vec));
 }
 
-stock bool:Vec_ToggleOrdered(Vec:vec, bool:toggle) {
+stock Vec_ToggleOrdered(Vec:vec, bool:toggle) {
     if(!IsValidVec(vec)) {
         return VEC_INVALID;
     }
     mset(Vec_isOrdered, _:vec, _:toggle);
+    return VEC_OK;
+}
+
+stock Vec_ChangeIncrease(Vec:vec, increase) {
+    if(!IsValidVec(vec)) {
+        return VEC_INVALID;
+    }
+    mset(Vec_increase, _:vec, increase);
+    return VEC_OK;
+}
+
+stock Vec_ToggleReadOnly(Vec:vec, bool:toggle) {
+    if(!IsValidVec(vec)) {
+        return VEC_INVALID;
+    }
+    mset(Vec_isReadOnly, _:vec, _:toggle);
+    return VEC_OK;
+}
+
+stock Vec_ToggleFixedSize(Vec:vec, bool:toggle) {
+    if(!IsValidVec(vec)) {
+        return VEC_INVALID;
+    }
+    mset(Vec_isSizeFixed, _:vec, _:toggle);
     return VEC_OK;
 }
 
