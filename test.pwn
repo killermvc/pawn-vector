@@ -221,7 +221,9 @@ Test:AppendVector() {
         }
     }
 
-    ASSERT(pass);
+    printf("%d", Vec_GetLength(vec));
+
+    ASSERT(pass && Vec_GetLength(vec) == 5);
 
     Vec_Delete(vec);
 }

@@ -332,7 +332,7 @@ stock Vec:Vec_NewFromArray(const arr[], capacity = VEC_DEFAULT_CAPACITY, sizeInc
     return id;
 }
 
-stock Vec:Vec_Clone(Vec:vec, bool:readonly = false) {
+stock Vec:Vec_Clone(Vec:vec, bool:readonly = false, start = 0, end = 0) {
     new Vec:newVec = Vec_New(Vec_GetCapacity(vec), mget(Vec_increase, _:vec));
     Vec_ToggleFixedSize(newVec, Vec_IsFixedSize(vec));
     Vec_ToggleOrdered(newVec, Vec_IsOrdered(vec));
@@ -340,7 +340,7 @@ stock Vec:Vec_Clone(Vec:vec, bool:readonly = false) {
         return INVALID_VECTOR_ID;
     }
 
-    Vec_AppendVector(newVec, vec);
+    Vec_AppendVector(newVec, vec, start, end);
 
     if(readonly) {
         mset(Vec_isReadOnly, _:newVec, 1);
@@ -646,17 +646,20 @@ stock Vec_AppendVector(Vec:vec, Vec:toAppend, start = 0, end = 0) {
         return VEC_NOP;
     }
 
-    if(Vec_GetLength(vec) + end - start >= Vec_GetCapacity(vec)) {
+    new len = Vec_GetLength(vec);
+
+    if(len + end - start >= Vec_GetCapacity(vec)) {
         if(Vec_IsFixedSize(vec)) {
             return VEC_NOP;
         }
-        if(Vec_Resize(vec, Vec_GetLength(vec) + end - start + mget(Vec_increase, _:vec)) == VEC_NOALLOC) {
+        if(Vec_Resize(vec, len + end - start + mget(Vec_increase, _:vec)) == VEC_NOALLOC) {
             return VEC_NOALLOC;
         }
     }
     new Alloc:slot = Vec_GetVecAllocSlot(vec), Alloc:slotToAppend = Vec_GetVecAllocSlot(toAppend);
 
-    Malloc_SetA(slot, Vec_GetLength(vec), mget(slotToAppend, start), end);
+    Malloc_SetA(slot, len, mget(slotToAppend, start), end);
+    mset(Vec_vectorLength, _:vec, len + end - start + 1);
     return VEC_OK;
 }
 
