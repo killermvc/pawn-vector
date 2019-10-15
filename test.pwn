@@ -1,4 +1,6 @@
 #define RUN_TESTS
+#define YSI_NO_HEAP_MALLOC
+
 #include <a_samp>
 #include "vector.inc"
 #include <YSI_Core\y_testing>
@@ -97,13 +99,13 @@ Test:Delete() {
 }
 
 Test:CreateDeleteMany() {
-    new Vec:vecs[5000];
+    new Vec:vecs[100];
 
-    for(new i = 0; i < 5000; i++) {
+    for(new i = 0; i < 100; i++) {
         vecs[i] = Vec_New();
     }
 
-    for(new i = 0; i < 5000; i++) {
+    for(new i = 0; i < 100; i++) {
         Vec_Delete(vecs[i]);
     }
 }
@@ -392,4 +394,64 @@ Test:RemoveAll() {
 
     ASSERT(pass);
     Vec_Delete(vec);
+}
+
+Test:Swap() {
+    new
+        arr[] = {1, 2, 3, 4, 5, 6},
+        res[] = {1, 5, 3, 4, 2, 6},
+        Vec:vec = Vec_NewFromArray(arr),
+        bool:pass = true;
+
+    Vec_Swap(vec, 1, 4);
+
+    for(new i = 0; i < Vec_GetLength(vec); i++) {
+        if(Vec_GetValue(vec, i) != res[i]) {
+            pass = false;
+        }
+    }
+
+    ASSERT(pass);
+
+    Vec_Delete(vec);
+}
+
+Test:SortDef() {
+    new
+        arr[] = {16, 61, 64, 91, 23, 97, 51, 70, 90, 80},
+        res[] = {16, 23, 51, 61, 64, 70, 80, 90, 91, 97},
+        Vec:vec = Vec_NewFromArray(arr),
+        bool:pass = true;
+
+    Vec_Sort(vec);
+
+    for(new i = 0; i < Vec_GetLength(vec); i++) {
+        if(Vec_GetValue(vec, i) != res[i]) {
+            pass = false;
+        }
+    }
+
+    ASSERT(pass);
+}
+
+Test:sort() {
+    new
+        arr[] = {16, 61, 64, 91, 23, 97, 51, 70, 90, 80},
+        res[] = {97, 91, 90, 80, 70, 64, 61, 51, 23, 16},
+        Vec:vec = Vec_NewFromArray(arr),
+        bool:pass = true;
+
+    inline compare(value1, value2) {
+        inline_return value1 >= value2 ? true : false;
+    }
+
+    Vec_SortBy(vec, using inline compare);
+
+    for(new i = 0; i < Vec_GetLength(vec); i++) {
+        if(Vec_GetValue(vec, i) != res[i]) {
+            pass = false;
+        }
+    }
+
+    ASSERT(pass);
 }

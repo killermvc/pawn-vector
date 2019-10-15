@@ -9,6 +9,7 @@
 #define _vector_included
 
 #include <YSI_Coding\y_malloc>
+#include <YSI_Coding\y_inline>
 
 #if !defined VEC_DEFAULT_CAPACITY
     #define VEC_DEFAULT_CAPACITY    (32)
@@ -207,6 +208,22 @@ static stock Vec_resizeVectorsData(id, length) {
 
 stock Alloc:Vec_GetVecAllocSlot(Vec:vec) {
     return Alloc:mget(Vec_vectorSlot, _:vec);
+}
+
+static stock Vec_QSPartition(Vec:unsorted, Func:Compare<ii>, start, end) {
+    new pivot = Vec_GetValue(unsorted, end);
+
+    new i = start - 1;
+
+    for(new j = start; j <= end-1; j++) {
+        if(@.Compare(Vec_GetValue(unsorted, j), pivot)) {
+            i++;
+            Vec_Swap(unsorted, i, j);
+        }
+    }
+    Vec_Swap(unsorted, i+1, end);
+
+    return i+1;
 }
 
 #include <YSI_Coding\y_hooks>
@@ -790,6 +807,51 @@ stock Vec:Vec_FindAll(Vec:vec, value) {
         indexVector = INVALID_VECTOR_ID;
     }
     return indexVector;
+}
+
+stock Vec_Sort(Vec:unsorted) {
+    if(!Vec_IsValid(unsorted)) {
+        return VEC_INVALID;
+    }
+
+    inline defSorter(value1, value2) {
+        return value1 <= value2 ? true : false;
+    }
+    return Vec_SortBy(unsorted, using inline defSorter);
+}
+
+stock Vec_SortBy(Vec:unsorted, Func:Compare<ii>) {
+    if(!Vec_IsValid(unsorted)) {
+        return VEC_INVALID;
+    }
+
+    return Vec_SortAt(unsorted, Compare, 0, Vec_GetLength(unsorted)-1);
+}
+
+stock Vec_SortAt(Vec:unsorted, Func:Compare<ii>, start, end) {
+    if(!Vec_IsValid(unsorted)) {
+        return VEC_INVALID;
+    }
+
+    if(start < end) {
+        new pi = Vec_QSPartition(unsorted, Compare, start, end);
+
+        Vec_SortAt(unsorted, Compare, start, pi-1);
+        Vec_SortAt(unsorted, Compare, pi+1, end);
+        return VEC_OK;
+    }
+    return VEC_NOP;
+}
+
+stock Vec_Swap(Vec:vec, index1, index2) {
+    if(!Vec_IsValid(vec)) {
+        return VEC_INVALID;
+    }
+
+    new tmp = Vec_GetValue(vec, index1);
+    Vec_SetValue(vec, index1, Vec_GetValue(vec, index2));
+    Vec_SetValue(vec, index2, tmp);
+    return VEC_OK;
 }
 
 stock Vec_Delete(Vec:vec) {
