@@ -332,6 +332,12 @@ stock Vec:Vec_NewFromArray(const arr[], capacity = VEC_DEFAULT_CAPACITY, sizeInc
     return id;
 }
 
+stock Vec:Vec_NewString(const str[], capacity = VEC_DEFAULT_CAPACITY, sizeIncrease = VEC_DEFAULT_INCREASE, size = sizeof str) {
+    new Vec:stringVec = Vec_NewFromArray(str, capacity, sizeIncrease, size);
+    mset(Vec_vectorLength, _:stringVec, Vec_GetLength(stringVec)-1);
+    return stringVec;
+}
+
 stock Vec:Vec_Clone(Vec:vec, bool:readonly = false, start = 0, end = 0) {
     new Vec:newVec = Vec_New(Vec_GetCapacity(vec), mget(Vec_increase, _:vec));
     Vec_ToggleFixedSize(newVec, Vec_IsFixedSize(vec));
@@ -480,7 +486,9 @@ stock Vec_AppendArray(Vec:vec, const arr[], arrSize = sizeof arr) {
 }
 
 stock Vec_AppendString(Vec:vec, const str[], arrSize = sizeof str) {
-    return Vec_AppendArray(vec, str, arrSize);
+    new ret = Vec_AppendArray(vec, str, arrSize);
+    mset(Vec_vectorLength, _:vec, Vec_GetLength(vec)-1);
+    return ret;
 }
 
 stock Vec_GetValue(Vec:vec, index) {
