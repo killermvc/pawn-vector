@@ -574,7 +574,7 @@ stock Vec_RemoveAt(Vec:vec, index) {
     return VEC_OK;
 }
 
-stock Vec_Remove(Vec:vec, value) {
+stock Vec_RemoveElement(Vec:vec, value) {
     if(!Vec_IsValid(vec)) {
         return VEC_INVALID;
     }
@@ -592,11 +592,28 @@ stock Vec_Remove(Vec:vec, value) {
     return VEC_NOT_FOUND;
 }
 
-stock Vec_RemoveLast(Vec:vec, value) {
+stock Vec_Remove(Vec:vec, Func:predicate<i>) {
     if(!Vec_IsValid(vec)) {
         return VEC_INVALID;
     }
 
+    if(Vec_IsReadOnly(vec)) {
+        return VEC_NOP;
+    }
+
+    for(new i = 0, j = Vec_GetLength(vec); i < j; i++) {
+        if(@.predicate(Vec_GetValue(vec, i))) {
+            Vec_RemoveAt(vec, i);
+            return VEC_OK;
+        }
+    }
+    return VEC_NOT_FOUND;
+}
+
+stock Vec_RemoveLastElement(Vec:vec, value) {
+    if(!Vec_IsValid(vec)) {
+        return VEC_INVALID;
+    }
     if(Vec_IsReadOnly(vec)) {
         return VEC_NOP;
     }
@@ -610,7 +627,24 @@ stock Vec_RemoveLast(Vec:vec, value) {
     return VEC_NOT_FOUND;
 }
 
-stock Vec_RemoveAll(Vec:vec, value) {
+stock Vec_RemoveLast(Vec:vec, Func:predicate<i>) {
+    if(!Vec_IsValid(vec)) {
+        return VEC_INVALID;
+    }
+    if(Vec_IsReadOnly(vec)) {
+        return VEC_NOP;
+    }
+
+    for(new i = Vec_GetLength(vec) - 1; i >= 0; i--) {
+        if(@.predicate(Vec_GetValue(vec, i))) {
+            Vec_RemoveAt(vec, i);
+            return VEC_OK;
+        }
+    }
+    return VEC_NOT_FOUND;
+}
+
+stock Vec_RemoveAllElements(Vec:vec, value) {
     if(!Vec_IsValid(vec)) {
         return VEC_INVALID;
     }
@@ -621,6 +655,23 @@ stock Vec_RemoveAll(Vec:vec, value) {
 
     for(new i = 0, j = Vec_GetLength(vec); i < j; i++) {
         if(Vec_GetValue(vec, i) == value) {
+            Vec_RemoveAt(vec, i);
+        }
+    }
+    return VEC_OK;
+}
+
+stock Vec_RemoveAll(Vec:vec, Func:predicate<i>) {
+    if(!Vec_IsValid(vec)) {
+        return VEC_INVALID;
+    }
+
+    if(Vec_IsReadOnly(vec)) {
+        return VEC_NOP;
+    }
+
+    for(new i = 0, j = Vec_GetLength(vec); i < j; i++) {
+        if(@.predicate(Vec_GetValue(vec, i))) {
             Vec_RemoveAt(vec, i);
         }
     }

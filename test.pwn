@@ -237,7 +237,7 @@ Test:Remove() {
         bool:pass = true,
         Vec:vec = Vec_NewFromArray(arr, sizeof arr);
 
-    Vec_Remove(vec, 3);
+    Vec_RemoveElement(vec, 3);
 
     for(new i = 0; i < 5; i++) {
         if(Vec_GetValue(vec, i) != result[i]) {
@@ -259,7 +259,7 @@ Test:RemoveOrdered() {
 
     Vec_ToggleOrdered(vec, true);
 
-    Vec_Remove(vec, 3);
+    Vec_RemoveElement(vec, 3);
 
     for(new i = 0; i < 5; i++) {
         if(Vec_GetValue(vec, i) != result[i]) {
@@ -349,7 +349,7 @@ Test:RemoveLast() {
         res[] =  {9, 8, 3, 8, 4, 6, 6, 1},
         bool:pass = true;
 
-    Vec_RemoveLast(vec, 8);
+    Vec_RemoveLastElement(vec, 8);
 
     for(new i = 0; i < 8; i++) {
         if(Vec_GetValue(vec, i) != res[i]) {
@@ -384,7 +384,7 @@ Test:RemoveAll() {
         res[] =  {9, 6, 3, 1, 4, 6},
         bool:pass = true;
 
-    Vec_RemoveAll(vec, 8);
+    Vec_RemoveAllElements(vec, 8);
 
     for(new i = 0; i < 6; i++) {
         if(Vec_GetValue(vec, i) != res[i]) {
