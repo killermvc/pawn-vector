@@ -351,7 +351,9 @@ stock Vec:Vec_NewFromArray(const arr[], capacity = VEC_DEFAULT_CAPACITY, sizeInc
 
 stock Vec:Vec_NewString(const str[], capacity = VEC_DEFAULT_CAPACITY, sizeIncrease = VEC_DEFAULT_INCREASE, size = sizeof str) {
     new Vec:stringVec = Vec_NewFromArray(str, capacity, sizeIncrease, size);
-    mset(Vec_vectorLength, _:stringVec, Vec_GetLength(stringVec)-1);
+    if(stringVec != INVALID_VECTOR_ID) {
+        mset(Vec_vectorLength, _:stringVec, Vec_GetLength(stringVec)-1);
+    }
     return stringVec;
 }
 
@@ -422,11 +424,7 @@ stock Vec_Resize(Vec:vec, newSize) {
     if(!Vec_IsValid(vec)) {
         return VEC_INVALID;
     }
-    if(Vec_IsReadOnly(vec)) {
-        return VEC_NOP;
-    }
-
-    if(Vec_IsFixedSize(vec)) {
+    if(Vec_IsReadOnly(vec) || Vec_IsFixedSize(vec)) {
         return VEC_NOP;
     }
 
@@ -504,7 +502,9 @@ stock Vec_AppendArray(Vec:vec, const arr[], arrSize = sizeof arr) {
 
 stock Vec_AppendString(Vec:vec, const str[], arrSize = sizeof str) {
     new ret = Vec_AppendArray(vec, str, arrSize);
-    mset(Vec_vectorLength, _:vec, Vec_GetLength(vec)-1);
+    if(ret == VEC_OK) {
+        mset(Vec_vectorLength, _:vec, Vec_GetLength(vec)-1);
+    }
     return ret;
 }
 
@@ -541,11 +541,9 @@ stock Vec_SetValue(Vec:vec, index, value) {
 
     if(index > Vec_GetLength(vec)) {
         if(index >= Vec_GetCapacity(vec)) {
-            if(Vec_IsFixedSize(vec)) {
-                return VEC_NOP;
-            }
-            if(Vec_Resize(vec, index + mget(Vec_increase, _:vec)) == VEC_NOALLOC) {
-                return VEC_NOALLOC;
+            new ret = Vec_Resize(vec, index + mget(Vec_increase, _:vec));
+            if(ret != VEC_OK) {
+                return ret;
             }
         }
         mset(Vec_vectorLength, _:vec, index+1);
@@ -578,7 +576,6 @@ stock Vec_RemoveAt(Vec:vec, index) {
     new length = Vec_GetLength(vec);
     Vec_internalRemove(Vec_GetVecAllocSlot(vec), index, Vec_IsOrdered(vec), length);
     mset(Vec_vectorLength, _:vec, length);
-
     return VEC_OK;
 }
 
@@ -725,11 +722,9 @@ stock Vec_AppendVector(Vec:vec, Vec:toAppend, start = 0, end = 0) {
     new len = Vec_GetLength(vec);
 
     if(len + end - start >= Vec_GetCapacity(vec)) {
-        if(Vec_IsFixedSize(vec)) {
-            return VEC_NOP;
-        }
-        if(Vec_Resize(vec, len + end - start + mget(Vec_increase, _:vec)) == VEC_NOALLOC) {
-            return VEC_NOALLOC;
+        new ret = Vec_Resize(vec, len + end - start + mget(Vec_increase, _:vec));
+        if(ret != VEC_OK) {
+            return ret;
         }
     }
     new Alloc:slot = Vec_GetVecAllocSlot(vec), Alloc:slotToAppend = Vec_GetVecAllocSlot(toAppend);
@@ -764,7 +759,6 @@ stock Vec_Reverse(Vec:vec, start = 0, end = 0) {
         end = Vec_GetLength(vec)-1;
     }
 
-
     if(start == end) {
         return VEC_NOP;
     }
@@ -775,9 +769,7 @@ stock Vec_Reverse(Vec:vec, start = 0, end = 0) {
         start = tmp;
     }
 
-    new tmp;
-
-    for(new i = start, j = end; i < j; i++, j--) {
+    for(new i = start, tmp, j = end; i < j; i++, j--) {
         tmp = Vec_GetValue(vec, j);
         Vec_SetValue(vec, j, Vec_GetValue(vec, i));
         Vec_SetValue(vec, i, tmp);
@@ -809,11 +801,9 @@ stock Vec_SetArray(Vec:vec, index, const array[], start = 0, end = 0, size = siz
     }
 
     if(index + end - start >= Vec_GetCapacity(vec)) {
-        if(Vec_IsFixedSize(vec)) {
-            return VEC_NOP;
-        }
-        if(Vec_Resize(vec, index + end - start + mget(Vec_increase, _:vec)) == VEC_NOALLOC) {
-            return VEC_NOALLOC;
+        new ret = Vec_Resize(vec, index + end - start + mget(Vec_increase, _:vec));
+        if(ret != VEC_OK) {
+            return ret;
         }
     }
 
