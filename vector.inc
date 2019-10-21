@@ -448,6 +448,21 @@ stock Vec_Append(Vec:vec, value) {
     return VEC_OK;
 }
 
+stock Vec_AppendChar(Vec:vec, ch) {
+    new ret = Vec_Append(vec, ch);
+    if(ret != VEC_OK) {
+        return ret;
+    }
+
+    ret = Vec_Append(vec, '\0');
+    if(ret != VEC_OK) {
+        return ret;
+    }
+
+    mset(Vec_vectorLength, _:vec, Vec_GetLength(vec)-1);
+    return VEC_OK;
+}
+
 stock Vec_AppendFloat(Vec:vec, Float:value) {
     return Vec_Append(vec, _:value);
 }
@@ -720,12 +735,6 @@ stock Vec_SetArray(Vec:vec, index, const array[], start = 0, end = 0, size = siz
 
     if(end == 0 || end > size) {
         end = size-1;
-    }
-
-    if(start > end) {
-        new tmp = end;
-        end = start;
-        start = tmp;
     }
 
     if(start == end) {
