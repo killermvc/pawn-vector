@@ -460,14 +460,15 @@ Test:Strings() {
     new Vec:string = Vec_NewString("hello");
     Vec_AppendString(string, ", world!");
 
-    new bool:pass = false;
+    new bool:pass;
     if(!strcmp("hello, world!", Vec_GetString(string, 0))) {
         pass = true;
     }
     ASSERT(pass);
 
     Vec_ChangeString(string, "hola");
-    Vec_AppendString(string, ", mundo!");
+    Vec_AppendChar(string, ',');
+    Vec_AppendString(string, " mundo!");
 
     pass = false;
     if(!strcmp("hola, mundo!", Vec_GetString(string, 0))) {
