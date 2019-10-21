@@ -580,21 +580,10 @@ stock Vec_RemoveAt(Vec:vec, index) {
 }
 
 stock Vec_RemoveElement(Vec:vec, value) {
-    if(!Vec_IsValid(vec)) {
-        return VEC_INVALID;
+    inline remVal(val) {
+        inline_return val == value ? true : false;
     }
-
-    if(Vec_IsReadOnly(vec)) {
-        return VEC_NOP;
-    }
-
-    for(new i = 0, j = Vec_GetLength(vec); i < j; i++) {
-        if(Vec_GetValue(vec, i) == value) {
-            Vec_RemoveAt(vec, i);
-            return VEC_OK;
-        }
-    }
-    return VEC_NOT_FOUND;
+    return Vec_Remove(vec, using inline remVal);
 }
 
 stock Vec_Remove(Vec:vec, Func:predicate<i>) {
@@ -616,20 +605,10 @@ stock Vec_Remove(Vec:vec, Func:predicate<i>) {
 }
 
 stock Vec_RemoveLastElement(Vec:vec, value) {
-    if(!Vec_IsValid(vec)) {
-        return VEC_INVALID;
+    inline remVal(val) {
+        inline_return val == value ? true : false;
     }
-    if(Vec_IsReadOnly(vec)) {
-        return VEC_NOP;
-    }
-
-    for(new i = Vec_GetLength(vec) - 1; i >= 0; i--) {
-        if(Vec_GetValue(vec, i) == value) {
-            Vec_RemoveAt(vec, i);
-            return VEC_OK;
-        }
-    }
-    return VEC_NOT_FOUND;
+    return Vec_RemoveLast(vec, using inline remVal);
 }
 
 stock Vec_RemoveLast(Vec:vec, Func:predicate<i>) {
@@ -650,20 +629,10 @@ stock Vec_RemoveLast(Vec:vec, Func:predicate<i>) {
 }
 
 stock Vec_RemoveAllElements(Vec:vec, value) {
-    if(!Vec_IsValid(vec)) {
-        return VEC_INVALID;
+    inline remVal(val) {
+        inline_return val == value ? true : false;
     }
-
-    if(Vec_IsReadOnly(vec)) {
-        return VEC_NOP;
-    }
-
-    for(new i = 0, j = Vec_GetLength(vec); i < j; i++) {
-        if(Vec_GetValue(vec, i) == value) {
-            Vec_RemoveAt(vec, i);
-        }
-    }
-    return VEC_OK;
+    return Vec_RemoveAll(vec, using inline remVal);
 }
 
 stock Vec_RemoveAll(Vec:vec, Func:predicate<i>) {
@@ -698,11 +667,9 @@ stock Vec_ChangeString(Vec:vec, const str[], len = -1) {
 
     //reset vector's length and append string at the start
     mset(Vec_vectorLength, _:vec, 0);
-    if (Vec_AppendArray(vec, str, len) == VEC_NOALLOC) {
+    if (Vec_AppendString(vec, str, len+1) == VEC_NOALLOC) {
         return VEC_NOALLOC;
     }
-    //set a null terminator after string
-    Vec_SetValue(vec, mget(Vec_vectorLength, _:vec), '\0');
     return VEC_OK;
 }
 
@@ -761,12 +728,6 @@ stock Vec_Reverse(Vec:vec, start = 0, end = 0) {
 
     if(start == end) {
         return VEC_NOP;
-    }
-
-    if(start > end) {
-        new tmp = end;
-        end = start;
-        start = tmp;
     }
 
     for(new i = start, tmp, j = end; i < j; i++, j--) {
@@ -859,10 +820,6 @@ stock Vec:Vec_FindAll(Vec:vec, value) {
 }
 
 stock Vec_Sort(Vec:unsorted) {
-    if(!Vec_IsValid(unsorted)) {
-        return VEC_INVALID;
-    }
-
     inline defSorter(value1, value2) {
         return value1 <= value2 ? true : false;
     }
@@ -870,10 +827,6 @@ stock Vec_Sort(Vec:unsorted) {
 }
 
 stock Vec_SortBy(Vec:unsorted, Func:Compare<ii>) {
-    if(!Vec_IsValid(unsorted)) {
-        return VEC_INVALID;
-    }
-
     return Vec_SortAt(unsorted, Compare, 0, Vec_GetLength(unsorted)-1);
 }
 
@@ -884,7 +837,6 @@ stock Vec_SortAt(Vec:unsorted, Func:Compare<ii>, start, end) {
 
     if(start < end) {
         new pi = Vec_QSPartition(unsorted, Compare, start, end);
-
         Vec_SortAt(unsorted, Compare, start, pi-1);
         Vec_SortAt(unsorted, Compare, pi+1, end);
         return VEC_OK;
@@ -913,6 +865,5 @@ stock Vec_Delete(Vec:vec) {
     mset(Vec_vectorLength, _:vec, 0);
     mset(Vec_isOrdered, _:vec, 0);
     mset(Vec_vectorSlot, _:vec, 0);
-
     return VEC_OK;
 }
