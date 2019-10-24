@@ -223,10 +223,7 @@ Test:AppendVector() {
         }
     }
 
-    printf("%d", Vec_GetLength(vec));
-
     ASSERT(pass && Vec_GetLength(vec) == 5);
-
     Vec_Delete(vec);
 }
 
@@ -306,7 +303,7 @@ Test:FindAll() {
         bool:pass = true,
         Vec:vec = Vec_NewFromArray(arr);
 
-    new Vec:indexVec = Vec_FindAll(vec, 4);
+    new Vec:indexVec = Vec_FindAllElements(vec, 4);
 
     ASSERT(Vec_GetLength(indexVec) == 4);
 
@@ -319,7 +316,7 @@ Test:FindAll() {
 
     Vec_Delete(indexVec);
 
-    indexVec = Vec_FindAll(vec, 15);
+    indexVec = Vec_FindAllElements(vec, 15);
 
     ASSERT(indexVec == INVALID_VECTOR_ID);
 
@@ -333,10 +330,10 @@ Test:find() {
         Vec:vec = Vec_NewFromArray(arr),
         index;
 
-    ASSERT(Vec_Find(vec, 3, index));
+    ASSERT(Vec_FindElement(vec, 3, index));
     ASSERT(index == 2);
 
-    ASSERT(!Vec_Find(vec, 7, index));
+    ASSERT(!Vec_FindElement(vec, 7, index));
     ASSERT(index == -1);
 
     Vec_Delete(vec);
@@ -368,11 +365,11 @@ Test:FindLast() {
         Vec:vec = Vec_NewFromArray(arr),
         index;
 
-    new ret = Vec_FindLast(vec, 8, index);
-    ASSERT(ret == VEC_OK && index == 6);
+    new bool:ret = Vec_FindLastElement(vec, 8, index);
+    ASSERT(ret && index == 6);
 
-    ret = Vec_FindLast(vec, 15);
-    ASSERT(ret == VEC_NOT_FOUND);
+    ret = Vec_FindLastElement(vec, 15, index);
+    ASSERT(!ret && index == -1);
 
     Vec_Delete(vec);
 }

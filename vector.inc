@@ -772,13 +772,14 @@ stock Vec_SetArray(Vec:vec, index, const array[], start = 0, end = 0, size = siz
     return VEC_OK;
 }
 
-stock bool:Vec_Find(Vec:vec, value, &index = 0) {
+stock bool:Vec_Find(Vec:vec, Func:predicate<i>, &index = 0) {
     if(!Vec_IsValid(vec)) {
+        index = -2;
         return false;
     }
 
     for(new i = 0; i < Vec_GetLength(vec); i++) {
-        if(Vec_GetValue(vec, i) == value) {
+        if(@.predicate(Vec_GetValue(vec, i))) {
             index = i;
             return true;
         }
@@ -787,28 +788,44 @@ stock bool:Vec_Find(Vec:vec, value, &index = 0) {
     return false;
 }
 
-stock Vec_FindLast(Vec:vec, value, &index = 0) {
+stock bool:Vec_FindElement(Vec:vec, value, &index = 0) {
+    inline finder(val) {
+         inline_return val == value ? true : false;
+    }
+    return Vec_Find(vec, using inline finder, index);
+}
+
+stock bool:Vec_FindLast(Vec:vec, Func:predicate<i>, &index = 0) {
     if(!Vec_IsValid(vec)) {
-        return VEC_INVALID;
+        index = -2;
+        return false;
     }
 
     for(new i = Vec_GetLength(vec) - 1; i >= 0; i--) {
-        if(Vec_GetValue(vec, i) == value) {
+        if(@.predicate(Vec_GetValue(vec, i))) {
             index = i;
-            return VEC_OK;
+            return true;
         }
     }
-    return VEC_NOT_FOUND;
+    index = -1;
+    return false;
 }
 
-stock Vec:Vec_FindAll(Vec:vec, value) {
+stock bool:Vec_FindLastElement(Vec:vec, value, &index = 0) {
+    inline finder(val) {
+        inline_return val == value ? true : false;
+    }
+    return Vec_FindLast(vec, using inline finder, index);
+}
+
+stock Vec:Vec_FindAll(Vec:vec, Func:predicate<i>) {
     if(!Vec_IsValid(vec)) {
         return INVALID_VECTOR_ID;
     }
 
     new Vec:indexVector = Vec_New(2);
     for(new i = 0; i < Vec_GetLength(vec); i++) {
-        if(Vec_GetValue(vec, i) == value) {
+        if(@.predicate(Vec_GetValue(vec, i))) {
             Vec_Append(indexVector, i);
         }
     }
@@ -817,6 +834,13 @@ stock Vec:Vec_FindAll(Vec:vec, value) {
         indexVector = INVALID_VECTOR_ID;
     }
     return indexVector;
+}
+
+stock Vec:Vec_FindAllElements(Vec:vec, value) {
+    inline finder(val) {
+         inline_return val == value ? true : false;
+    }
+    return Vec_FindAll(vec, using inline finder);
 }
 
 stock Vec_Sort(Vec:unsorted) {
