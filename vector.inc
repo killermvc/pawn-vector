@@ -855,6 +855,14 @@ stock Vec_Swap(Vec:vec, index1, index2) {
     return VEC_OK;
 }
 
+stock Vec_Clear(Vec:vec) {
+    if(!Vec_IsValid(vec)) {
+        return VEC_INVALID;
+    }
+    memset(mget(Vec_GetVecAllocSlot(vec), 0), 0, Vec_GetLength(vec));
+    mset(Vec_vectorLength, _:vec, 0);
+}
+
 stock Vec_Delete(Vec:vec) {
     if(!Vec_IsValid(vec)) {
         return VEC_INVALID;

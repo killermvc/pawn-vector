@@ -474,4 +474,6 @@ Test:Strings() {
         pass = true;
     }
     ASSERT(pass);
+
+    Vec_Delete(string);
 }
