@@ -903,22 +903,35 @@ stock bool:Vec_TrueForAll(Vec:vec, Func:predicate<i>) {
     return pass;
 }
 
-stock Vec_BinarySearch(Vec:vec, value) {
+stock Vec_BinarySearchElement(Vec:vec, value) {
+    inline searchVal(val) {
+        if(val == value) {
+            return 0;
+        } else if(val < value) {
+            return -1;
+        } else {
+            return 1;
+        }
+    }
+    return Vec_BinarySearch(vec, using inline searchVal);
+}
+
+stock Vec_BinarySearch(Vec:vec, Func:predicate<i>) {
     new start = 0, end = Vec_GetLength(vec)-1, middle;
 
     while(start <= end) {
         printf("%d %d %d", start, end, middle);
-        if(Vec_GetValue(vec, start) == value) {
+        if(!@.predicate(Vec_GetValue(vec, start))) {
             return start;
         }
-        if(Vec_GetValue(vec, end) == value) {
+        if(!@.predicate(Vec_GetValue(vec, end))) {
             return end;
         }
         middle = (end + start)/2;
 
-        if(Vec_GetValue(vec, middle) == value) {
+        if(!@.predicate(Vec_GetValue(vec, middle))) {
             return middle;
-        } else if(Vec_GetValue(vec, middle) < value) {
+        } else if(@.predicate(Vec_GetValue(vec, middle)) == -1) {
             start = middle+1;
         } else {
             end = middle-1;
