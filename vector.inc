@@ -885,6 +885,22 @@ stock Vec_Clear(Vec:vec) {
     }
     memset(mget(Vec_GetVecAllocSlot(vec), 0), 0, Vec_GetLength(vec));
     mset(Vec_vectorLength, _:vec, 0);
+    return VEC_OK;
+}
+
+stock bool:Vec_TrueForAll(Vec:vec, Func:predicate<i>) {
+    if(!Vec_IsValid(vec)) {
+        return false;
+    }
+
+    new bool:pass = true;
+    for(new i = 0, j = Vec_GetLength(vec); i < j; i++) {
+        if(!@.predicate(Vec_GetValue(vec, i))) {
+            pass = false;
+            break;
+        }
+    }
+    return pass;
 }
 
 stock Vec_Delete(Vec:vec) {

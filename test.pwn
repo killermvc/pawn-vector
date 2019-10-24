@@ -474,3 +474,17 @@ Test:Strings() {
 
     Vec_Delete(string);
 }
+
+Test:TrueForAll() {
+    new Vec:vec = Vec_NewFromArray({5, 10, 15, 20});
+    new Vec:vec2 = Vec_NewFromArray({5, 10, 15, 3});
+    inline isMultipleOf5(value) {
+        inline_return value % 5 == 0 ? true : false;
+    }
+
+    ASSERT(Vec_TrueForAll(vec, using inline isMultipleOf5));
+    ASSERT(!Vec_TrueForAll(vec2, using inline isMultipleOf5));
+
+    Vec_Delete(vec);
+    Vec_Delete(vec2);
+}
