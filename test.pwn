@@ -488,3 +488,12 @@ Test:TrueForAll() {
     Vec_Delete(vec);
     Vec_Delete(vec2);
 }
+
+Test:BinarySearch() {
+    new Vec:vec = Vec_NewFromArray({16, 24, 30, 31, 66, 71, 77, 87, 97, 100});
+    ASSERT(Vec_BinarySearch(vec, 30) == 2);
+    ASSERT(Vec_BinarySearch(vec, 16) == 0);
+    ASSERT(Vec_BinarySearch(vec, 77) == 6);
+    ASSERT(Vec_BinarySearch(vec, 29) == -1);
+    Vec_Delete(vec);
+}
