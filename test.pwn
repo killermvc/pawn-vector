@@ -97,13 +97,13 @@ Test:Delete() {
 }
 
 Test:CreateDeleteMany() {
-    new Vec:vecs[5000];
+    new Vec:vecs[100];
 
-    for(new i = 0; i < 5000; i++) {
+    for(new i = 0; i < 100; i++) {
         vecs[i] = Vec_New();
     }
 
-    for(new i = 0; i < 5000; i++) {
+    for(new i = 0; i < 100; i++) {
         Vec_Delete(vecs[i]);
     }
 }
@@ -220,8 +220,6 @@ Test:AppendVector() {
             pass = false;
         }
     }
-
-    printf("%d", Vec_GetLength(vec));
 
     ASSERT(pass && Vec_GetLength(vec) == 5);
 
@@ -391,5 +389,36 @@ Test:RemoveAll() {
     }
 
     ASSERT(pass);
+    Vec_Delete(vec);
+}
+
+Test:Strings() {
+    new Vec:string = Vec_NewString("hello");
+    Vec_AppendString(string, ", world!");
+
+    new bool:pass = false;
+    if(!strcmp("hello, world!", Vec_GetString(string, 0))) {
+        pass = true;
+    }
+    ASSERT(pass);
+
+    Vec_ChangeString(string, "hola");
+    Vec_AppendString(string, ", mundo!");
+
+    pass = false;
+    if(!strcmp("hola, mundo!", Vec_GetString(string, 0))) {
+        pass = true;
+    }
+    ASSERT(pass);
+
+    Vec_Delete(string);
+}
+
+Test:BinarySearch() {
+    new Vec:vec = Vec_NewFromArray({16, 24, 30, 31, 66, 71, 77, 87, 97, 100});
+    ASSERT(Vec_BinarySearch(vec, 30) == 2);
+    ASSERT(Vec_BinarySearch(vec, 16) == 0);
+    ASSERT(Vec_BinarySearch(vec, 77) == 6);
+    ASSERT(Vec_BinarySearch(vec, 29) == -1);
     Vec_Delete(vec);
 }

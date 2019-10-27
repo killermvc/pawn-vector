@@ -799,6 +799,38 @@ stock Vec:Vec_FindAll(Vec:vec, value) {
     return indexVector;
 }
 
+stock Vec_Clear(Vec:vec) {
+    if(!Vec_IsValid(vec)) {
+        return VEC_INVALID;
+    }
+    memset(mget(Vec_GetVecAllocSlot(vec), 0), 0, Vec_GetLength(vec));
+    mset(Vec_vectorLength, _:vec, 0);
+}
+
+stock Vec_BinarySearch(Vec:vec, value) {
+    new start = 0, end = Vec_GetLength(vec)-1, middle;
+
+    while(start <= end) {
+        printf("%d %d %d", start, end, middle);
+        if(Vec_GetValue(vec, start) == value) {
+            return start;
+        }
+        if(Vec_GetValue(vec, end) == value) {
+            return end;
+        }
+        middle = (end + start)/2;
+
+        if(Vec_GetValue(vec, middle) == value) {
+            return middle;
+        } else if(Vec_GetValue(vec, middle) < value) {
+            start = middle+1;
+        } else {
+            end = middle-1;
+        }
+    }
+    return -1;
+}
+
 stock Vec_Delete(Vec:vec) {
     if(!Vec_IsValid(vec)) {
         return VEC_INVALID;
