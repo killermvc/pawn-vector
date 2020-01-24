@@ -376,7 +376,7 @@ stock Vec:Vec_NewFromArray(const arr[], capacity = VEC_DEFAULT_CAPACITY, sizeInc
 stock Vec:Vec_NewString(const str[], capacity = VEC_DEFAULT_CAPACITY, sizeIncrease = VEC_DEFAULT_INCREASE, size = sizeof str) {
     new Vec:stringVec = Vec_NewFromArray(str, capacity, sizeIncrease, size);
     if(stringVec != INVALID_VECTOR_ID) {
-        Vec_SetLen(_:stringVec, Vec_GetLength(stringVec)-1)
+        Vec_SetLen(stringVec, Vec_GetLength(stringVec)-1);
     }
     return stringVec;
 }
@@ -474,7 +474,7 @@ stock Vec_AppendChar(Vec:vec, ch) {
         return ret;
     }
 
-    mset(Vec_vectorLength, _:vec, Vec_GetLength(vec)-1);
+    Vec_SetLen(vec, Vec_GetLength(vec)-1);
     return VEC_OK;
 }
 
@@ -678,7 +678,7 @@ stock Vec_ChangeString(Vec:vec, const str[], len = -1) {
 
     //reset vector's length and append string at the start
     Vec_SetLen(vec, 0);
-    if(Vec_AppendString(vec, str, len) == VEC_NOALLOC) {
+    if(Vec_AppendString(vec, str, len+1) == VEC_NOALLOC) {
         return VEC_NOALLOC;
     }
     return VEC_OK;
