@@ -223,10 +223,7 @@ Test:AppendVector() {
         }
     }
 
-    printf("%d", Vec_GetLength(vec));
-
     ASSERT(pass && Vec_GetLength(vec) == 5);
-
     Vec_Delete(vec);
 }
 
@@ -306,7 +303,7 @@ Test:FindAll() {
         bool:pass = true,
         Vec:vec = Vec_NewFromArray(arr);
 
-    new Vec:indexVec = Vec_FindAll(vec, 4);
+    new Vec:indexVec = Vec_FindAllElements(vec, 4);
 
     ASSERT(Vec_GetLength(indexVec) == 4);
 
@@ -319,7 +316,7 @@ Test:FindAll() {
 
     Vec_Delete(indexVec);
 
-    indexVec = Vec_FindAll(vec, 15);
+    indexVec = Vec_FindAllElements(vec, 15);
 
     ASSERT(indexVec == INVALID_VECTOR_ID);
 
@@ -333,10 +330,10 @@ Test:find() {
         Vec:vec = Vec_NewFromArray(arr),
         index;
 
-    ASSERT(Vec_Find(vec, 3, index));
+    ASSERT(Vec_FindElement(vec, 3, index));
     ASSERT(index == 2);
 
-    ASSERT(!Vec_Find(vec, 7, index));
+    ASSERT(!Vec_FindElement(vec, 7, index));
     ASSERT(index == -1);
 
     Vec_Delete(vec);
@@ -368,11 +365,11 @@ Test:FindLast() {
         Vec:vec = Vec_NewFromArray(arr),
         index;
 
-    new ret = Vec_FindLast(vec, 8, index);
-    ASSERT(ret == VEC_OK && index == 6);
+    new bool:ret = Vec_FindLastElement(vec, 8, index);
+    ASSERT(ret && index == 6);
 
-    ret = Vec_FindLast(vec, 15);
-    ASSERT(ret == VEC_NOT_FOUND);
+    ret = Vec_FindLastElement(vec, 15, index);
+    ASSERT(!ret && index == -1);
 
     Vec_Delete(vec);
 }
@@ -454,4 +451,50 @@ Test:sort() {
     }
 
     ASSERT(pass);
+}
+
+Test:Strings() {
+    new Vec:string = Vec_NewString("hello");
+    Vec_AppendString(string, ", world!");
+
+    new bool:pass;
+    if(!strcmp("hello, world!", Vec_GetString(string, 0))) {
+        pass = true;
+    }
+    ASSERT(pass);
+
+    Vec_ChangeString(string, "hola");
+    Vec_AppendChar(string, ',');
+    Vec_AppendString(string, " mundo!");
+
+    pass = false;
+    if(!strcmp("hola, mundo!", Vec_GetString(string, 0))) {
+        pass = true;
+    }
+    ASSERT(pass);
+
+    Vec_Delete(string);
+}
+
+Test:TrueForAll() {
+    new Vec:vec = Vec_NewFromArray({5, 10, 15, 20});
+    new Vec:vec2 = Vec_NewFromArray({5, 10, 15, 3});
+    inline isMultipleOf5(value) {
+        inline_return value % 5 == 0 ? true : false;
+    }
+
+    ASSERT(Vec_TrueForAll(vec, using inline isMultipleOf5));
+    ASSERT(!Vec_TrueForAll(vec2, using inline isMultipleOf5));
+
+    Vec_Delete(vec);
+    Vec_Delete(vec2);
+}
+
+Test:BinarySearch() {
+    new Vec:vec = Vec_NewFromArray({16, 24, 30, 31, 66, 71, 77, 87, 97, 100});
+    ASSERT(Vec_BinarySearchElement(vec, 30) == 2);
+    ASSERT(Vec_BinarySearchElement(vec, 16) == 0);
+    ASSERT(Vec_BinarySearchElement(vec, 77) == 6);
+    ASSERT(Vec_BinarySearchElement(vec, 29) == -1);
+    Vec_Delete(vec);
 }
