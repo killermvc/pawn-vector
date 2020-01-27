@@ -33,28 +33,6 @@ enum _:e_VEC_ERRORS
     VEC_NOP
 }
 
-stock create(val, bool:isOrdered, bool:isFixed, bool:isReadOnly) {
-    val = val << 3;
-    if(isOrdered) {
-        val = val | e_ATTRIBUTES_ORDERED;
-    }
-    if(isFixed) {
-        val = val | e_ATTRIBUTES_FIXED_SIZE;
-    }
-    if(isReadOnly) {
-        val = val | e_ATTRIBUTES_READ_ONLY;
-    }
-    return val;
-}
-
-stock getVal(val) {
-    return val >> 3;
-}
-
-/*stock resetVal(val) {
-    return 
-}*/
-
 #define INVALID_VECTOR_ID           (Vec:-1)
 
 static Alloc:Vec_increase;
