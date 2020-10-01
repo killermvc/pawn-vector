@@ -1,5 +1,8 @@
 #define RUN_TESTS
 #define YSI_NO_HEAP_MALLOC
+#define YSI_NO_CACHE_MESSAGE
+#define YSI_NO_OPTIMISATION_MESSAGE
+#define YSI_NO_VERSION_CHECK
 
 #include <a_samp>
 #include "vector.inc"
@@ -465,13 +468,14 @@ Test:Strings() {
 
     Vec_ChangeString(string, "hola");
     Vec_AppendChar(string, ',');
-    Vec_AppendString(string, " mundo!");
+    Vec_AppendString(string, " mundo");
+    Vec_AppendChar(string, '!');
 
     pass = false;
     if(!strcmp("hola, mundo!", Vec_GetString(string, 0))) {
         pass = true;
     }
-    ASSERT(pass);
+    ASSERT(pass && Vec_GetLength(string) == 12);
 
     Vec_Delete(string);
 }

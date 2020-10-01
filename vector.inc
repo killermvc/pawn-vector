@@ -281,7 +281,7 @@ stock Vec_ToggleOrdered(Vec:vec, bool:toggle) {
     if(Vec_IsOrdered(vec) == toggle) {
         return VEC_OK;
     }
-    mset(Vec_Attributes, _:vec, mget(Vec_Attributes, _:vec) ^ e_ATTRIBUTES_ORDERED);    
+    mset(Vec_Attributes, _:vec, mget(Vec_Attributes, _:vec) ^ e_ATTRIBUTES_ORDERED);
     return VEC_OK;
 }
 
@@ -292,7 +292,7 @@ stock Vec_ToggleReadOnly(Vec:vec, bool:toggle) {
     if(Vec_IsReadOnly(vec) == toggle) {
         return VEC_OK;
     }
-    mset(Vec_Attributes, _:vec, mget(Vec_Attributes, _:vec) ^ e_ATTRIBUTES_READ_ONLY); 
+    mset(Vec_Attributes, _:vec, mget(Vec_Attributes, _:vec) ^ e_ATTRIBUTES_READ_ONLY);
     return VEC_OK;
 }
 
@@ -303,7 +303,7 @@ stock Vec_ToggleFixedSize(Vec:vec, bool:toggle) {
     if(Vec_IsFixedSize(vec) == toggle) {
         return VEC_OK;
     }
-    mset(Vec_Attributes, _:vec, mget(Vec_Attributes, _:vec) ^ e_ATTRIBUTES_FIXED_SIZE); 
+    mset(Vec_Attributes, _:vec, mget(Vec_Attributes, _:vec) ^ e_ATTRIBUTES_FIXED_SIZE);
     return VEC_OK;
 }
 
