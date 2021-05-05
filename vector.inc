@@ -195,7 +195,7 @@ stock Vec_FindFirst(Vec:vector, value)
 	return -1;
 }
 
-stock E_VEC_ERROR:Vec_AppendArray(Vec:vector, const arr[], size = sizeof arr)
+stock E_VEC_ERROR:Vec_AppendArray(&Vec:vector, const arr[], size = sizeof arr)
 {
 	new len = Vec_Len(vector);
 	new requiredSize = len + size;
@@ -210,7 +210,7 @@ stock E_VEC_ERROR:Vec_AppendArray(Vec:vector, const arr[], size = sizeof arr)
 	return E_VEC_ERROR_OK;
 }
 
-stock E_VEC_ERROR:Vec_AppendString(Vec:vector, const str[], len = -1)
+stock E_VEC_ERROR:Vec_AppendString(&Vec:vector, const str[], len = -1)
 {
 	if(len <= 0)
 		len = strlen(str);
@@ -224,7 +224,7 @@ stock E_VEC_ERROR:Vec_AppendString(Vec:vector, const str[], len = -1)
 	return E_VEC_ERROR_OK;
 }
 
-stock E_VEC_ERROR:Vec_SetArray(Vec:vector, const arr[], index ,size = sizeof arr)
+stock E_VEC_ERROR:Vec_SetArray(&Vec:vector, const arr[], index ,size = sizeof arr)
 {
 	new requiredSize = index + size;
 	if(requiredSize >= Vec_Capacity(vector))
@@ -239,7 +239,7 @@ stock E_VEC_ERROR:Vec_SetArray(Vec:vector, const arr[], index ,size = sizeof arr
 	return E_VEC_ERROR_OK;
 }
 
-stock E_VEC_ERROR:Vec_AppendVector(Vec:vector, Vec:toAppend, start = 0, end = 0)
+stock E_VEC_ERROR:Vec_AppendVector(&Vec:vector, Vec:toAppend, start = 0, end = 0)
 {
 	if(end <= 0 || end > Vec_Len(toAppend))
 		end = Vec_Len(toAppend);
@@ -283,7 +283,9 @@ stock Vec_CopyTo(Vec:vector, dest[], start = 0, end = 0, size = sizeof dest)
 	memcpy(dest, Vec_GetAsArray(vector, start), 0, (end - start)*4, end);
 }
 
-stock Vec_Delete(Vec:vector)
+stock Vec_Delete(&Vec:vector)
 {
-	return Malloc_Free(Alloc:vector);
+	new res = Malloc_Free(Alloc:vector);
+	vector = Vec:NO_ALLOC;
+	return res;
 }
