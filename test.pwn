@@ -10,7 +10,7 @@
 
 Test:New()
 {
-	new Vec:vec = Vec_New(25, 28, true);
+	new Vec:vec = Vec_New(25, true, 28);
 
 	//y_malloc allocates multiples of 16 cells. so the capacity allocated is 32.
 	//However y_malloc uses one of this cells to store the capacity
@@ -42,7 +42,7 @@ Test:Append()
 
 Test:AppendResize()
 {
-	new Vec:vec = Vec_New(10, 10);
+	new Vec:vec = Vec_New(10, false, 10);
 
 	for(new i = 0; i < 14; ++i)
 	{
@@ -124,7 +124,7 @@ Test:RemoveAtUnordered()
 Test:RemoveAtOrdered()
 {
 	new
-		Vec:vec = Vec_New(10, VEC_DEFAULT_GROWTH, true),
+		Vec:vec = Vec_New(10, true),
 		expected[] = {1, 2, 4, 5, 0};
 	Vec_Append(vec, 1);
 	Vec_Append(vec, 2);
@@ -162,7 +162,7 @@ Test:RemoveFirstElementUnordered()
 Test:RemoveFirstElementOrdered()
 {
 	new
-		Vec:vec = Vec_New(10, VEC_DEFAULT_GROWTH, true),
+		Vec:vec = Vec_New(10, true),
 		expected[] = {1, 3, 4, 5, 0};
 	Vec_Append(vec, 1);
 	Vec_Append(vec, 2);
@@ -222,4 +222,144 @@ Test:FindFirst()
 	ASSERT_EQ(Vec_FindFirst(vec, 2), 1);
 	ASSERT_EQ(Vec_FindFirst(vec, 1), 0);
 	ASSERT_EQ(Vec_FindFirst(vec, 3), 2);
+}
+
+Test:AppendArray()
+{
+	new
+		Vec:vec = Vec_New(10),
+		arr[] = {2, 3, 4, 5},
+		expected[] = {1, 2, 3, 4, 5};
+	Vec_Append(vec, 1);
+
+	Vec_AppendArray(vec, arr, sizeof arr);
+
+	ASSERT_EQ(Vec_Len(vec), 5);
+	for(new i = 0; i < 5; ++i)
+	{
+		ASSERT_EQ(Vec_Get(vec, i), expected[i]);
+	}
+}
+
+Test:NewFromArray()
+{
+	new arr[] = {1, 2, 3, 4, 5};
+
+	new Vec:vec = Vec_NewFromArray(10, arr);
+
+	ASSERT_EQ(Vec_Len(vec), 5);
+	for(new i = 0; i < 5; ++i)
+	{
+		ASSERT_EQ(Vec_Get(vec, i), arr[i]);
+	}
+}
+
+Test:SetArray()
+{
+	new
+		startingArr[] = {1, 2, 3, 4, 5},
+		toSet[] = {6, 7, 8},
+		expected[] = {1, 6, 7, 8, 5},
+		Vec:vec = Vec_NewFromArray(10, startingArr);
+
+	Vec_SetArray(vec, toSet, 1);
+
+	ASSERT_EQ(Vec_Len(vec), 5);
+	for(new i = 0; i < 5; ++i)
+	{
+		ASSERT_EQ(Vec_Get(vec, i), expected[i]);
+	}
+}
+
+Test:SetArrayPastLength()
+{
+	new
+		startingArr[] = {1, 2, 3, 4, 5},
+		toSet[] = {6, 7, 8},
+		expected[] = {1, 2, 3, 6, 7, 8},
+		Vec:vec = Vec_NewFromArray(10, startingArr);
+
+	Vec_SetArray(vec, toSet, 3);
+
+	ASSERT_EQ(Vec_Len(vec), 6);
+	for(new i = 0; i < 6; ++i)
+	{
+		ASSERT_EQ(Vec_Get(vec, i), expected[i]);
+	}
+}
+
+Test:AppendVector()
+{
+	new
+		arr[] = {1, 2},
+		toAppendArr[] = {1, 2, 3, 4, 5, 6, 7},
+		Vec:vec = Vec_NewFromArray(10, arr),
+		Vec:toAppend = Vec_NewFromArray(10, toAppendArr);
+
+	Vec_AppendVector(vec, toAppend, 2, 5);
+
+	ASSERT_EQ(Vec_Len(vec), 5);
+	for(new i = 0; i < 5; ++i)
+	{
+		ASSERT_EQ(Vec_Get(vec, i), i + 1);
+	}
+}
+
+Test:Swap()
+{
+	new
+		arr[] = {1, 2, 3, 4, 5},
+		Vec:vec = Vec_NewFromArray(10, arr),
+		expected[] = {1, 4, 3, 2, 5};
+
+	Vec_Swap(vec, 1, 3);
+
+	for(new i = 0; i < 5; ++i)
+	{
+		ASSERT_EQ(Vec_Get(vec, i), expected[i]);
+	}
+}
+
+Test:Reverse()
+{
+	new
+		arr[] = {1, 2, 3, 4, 5, 6, 7},
+		Vec:vec = Vec_NewFromArray(10, arr),
+		expected[] = {1, 6, 5, 4, 3, 2, 7};
+
+	Vec_Reverse(vec, 1, 5);
+
+	for(new i = 0; i < 7; ++i)
+	{
+		ASSERT_EQ(Vec_Get(vec, i), expected[i]);
+	}
+}
+
+Test:CopyTo()
+{
+	new
+		arr[] = {1, 2, 3, 4, 5},
+		Vec:vec = Vec_NewFromArray(10, arr),
+		dest[5];
+
+	Vec_CopyTo(vec, dest, 1, 4);
+
+	for(new i = 0; i < 3; ++i)
+	{
+		ASSERT_EQ(dest[i], i + 2);
+	}
+}
+
+Test:ForEach()
+{
+	new
+		arr[] = {1, 2, 3, 4, 5},
+		Vec:vec = Vec_NewFromArray(10, arr),
+		i = 0;
+
+	VEC_FOREACH(new value : vec)
+	{
+		ASSERT_EQ(value, Vec_Get(vec, i));
+		i++;
+	}
 }
