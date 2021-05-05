@@ -30,9 +30,13 @@ enum E_VEC_ERROR()
 #define Vec_GetString(%0,%1)			Malloc_GetData(Alloc:%0,(%1)+_:e_VEC_DATA)
 #define VEC_FOREACH(new%0:%1) for(new i__=0,len__=Vec_Len(%1),%0=Vec_Get(%1,0);i__<len__;++i__,%0=Vec_Get(%1,i__))
 
+#define INVALID_VECTOR			(Vec:NO_ALLOC)
+
 stock Vec:Vec_New(capacity, bool:isOrdered = false, growth = VEC_DEFAULT_GROWTH)
 {
 	new Alloc:newVec = calloc(capacity + 3);
+	if(newVec == NO_ALLOC)
+		return INVALID_VECTOR;
 	Malloc_Set(newVec, e_VEC_DATA_GROWTH, growth);
 	Malloc_Set(newVec, e_VEC_DATA_IS_ORDERED, _:isOrdered);
 	return Vec:newVec;
@@ -41,6 +45,8 @@ stock Vec:Vec_New(capacity, bool:isOrdered = false, growth = VEC_DEFAULT_GROWTH)
 stock Vec:Vec_NewFromArray(capacity, const arr[], size = sizeof arr, bool:isOrdered = false, growth = VEC_DEFAULT_GROWTH)
 {
 	new Vec:vector = Vec_New(capacity >= size ? capacity : size, isOrdered, growth);
+	if(vector == INVALID_VECTOR)
+		return INVALID_VECTOR;
 	memcpy(Vec_GetAsArray(vector, 0), arr, 0, size * 4, size);
 	Vec_SetLen(vector, size);
 	return vector;
@@ -49,10 +55,12 @@ stock Vec:Vec_NewFromArray(capacity, const arr[], size = sizeof arr, bool:isOrde
 stock Vec:Vec_NewString(const str[], growth = VEC_DEFAULT_GROWTH)
 {
 	new len = strlen(str);
-	new Vec:vector = Vec_NewFromArray(len + growth, str, len, true, growth);
+	new Vec:string = Vec_NewFromArray(len + growth, str, len, true, growth);
+	if(string == INVALID_VECTOR)
+		return INVALID_VECTOR;
 	//Make sure the null terminator is deleted next time we append.
-	Vec_SetLen(vector, len);
-	return vector;
+	Vec_SetLen(string, len);
+	return string;
 }
 
 stock Vec_Len(Vec:vector)

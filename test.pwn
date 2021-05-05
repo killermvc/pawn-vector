@@ -16,6 +16,7 @@ Test:New()
 	//However y_malloc uses one of this cells to store the capacity
 	//and pawn-vector uses 3 more to store the length, the growth and whether is ordered or not
 	//thus the reported capacity is 28.
+	ASSERT_NE(vec, INVALID_VECTOR);
 	ASSERT_EQ(Vec_Capacity(vec), 28);
 	ASSERT_EQ(Vec_Len(vec), 0);
 	ASSERT_EQ(Vec_Growth(vec), 28);
