@@ -27,6 +27,7 @@ enum E_VEC_ERROR()
 }
 
 #define Vec_GetAsArray(%0,%1)			Malloc_GetData(Alloc:%0,(%1)+_:e_VEC_DATA)
+#define Vec_GetString(%0,%1)			Malloc_GetData(Alloc:%0,(%1)+_:e_VEC_DATA)
 #define VEC_FOREACH(new%0:%1) for(new i__=0,len__=Vec_Len(%1),%0=Vec_Get(%1,0);i__<len__;++i__,%0=Vec_Get(%1,i__))
 
 stock Vec:Vec_New(capacity, bool:isOrdered = false, growth = VEC_DEFAULT_GROWTH)
@@ -42,6 +43,15 @@ stock Vec:Vec_NewFromArray(capacity, const arr[], size = sizeof arr, bool:isOrde
 	new Vec:vector = Vec_New(capacity >= size ? capacity : size, isOrdered, growth);
 	memcpy(Vec_GetAsArray(vector, 0), arr, 0, size * 4, size);
 	Vec_SetLen(vector, size);
+	return vector;
+}
+
+stock Vec:Vec_NewString(const str[], growth = VEC_DEFAULT_GROWTH)
+{
+	new len = strlen(str);
+	new Vec:vector = Vec_NewFromArray(len + growth, str, len, true, growth);
+	//Make sure the null terminator is deleted next time we append.
+	Vec_SetLen(vector, len);
 	return vector;
 }
 
@@ -92,6 +102,15 @@ stock E_VEC_ERROR:Vec_Append(&Vec:vector, value)
 	Malloc_Set(Alloc:vector,  len + _:e_VEC_DATA, value);
 	Malloc_Set(Alloc:vector, e_VEC_DATA_LEN, len + 1);
 	return E_VEC_ERROR_OK;
+}
+
+stock E_VEC_ERROR:Vec_AppendChar(&Vec:vector, value)
+{
+	Vec_Append(vector, value);
+	//make sure to add a null terminator
+	Vec_Append(vector, '\0');
+	//make sure the null terminator gets deleted next time we append
+	Vec_SetLen(vector, Vec_Len(vector) - 1);
 }
 
 stock E_VEC_ERROR:Vec_Set(&Vec:vector, index, value)
@@ -188,6 +207,20 @@ stock E_VEC_ERROR:Vec_AppendArray(Vec:vector, const arr[], size = sizeof arr)
 
 	memcpy(Vec_GetAsArray(vector, len), arr, 0, size * 4, size);
 	Vec_SetLen(vector, len + size);
+	return E_VEC_ERROR_OK;
+}
+
+stock E_VEC_ERROR:Vec_AppendString(Vec:vector, const str[], len = -1)
+{
+	if(len <= 0)
+		len = strlen(str);
+
+	//len + 1 so that it adds the null terminator
+	new E_VEC_ERROR:err = Vec_AppendArray(vector, str, len + 1);
+	if(err != E_VEC_ERROR_OK)
+		return err;
+	//make sure the null terminator is deleted next time we append
+	Vec_SetLen(vector, Vec_Len(vector) - 1);
 	return E_VEC_ERROR_OK;
 }
 

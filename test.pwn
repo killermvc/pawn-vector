@@ -363,3 +363,13 @@ Test:ForEach()
 		i++;
 	}
 }
+
+Test:String()
+{
+	new Vec:vec = Vec_NewString("Hello, ");
+	Vec_AppendString(vec, "worl");
+	Vec_AppendChar(vec, 'd');
+
+	ASSERT_SAME(Vec_GetAsArray(vec,0), "Hello, world");
+	ASSERT_EQ(Vec_Len(vec), 12);
+}
