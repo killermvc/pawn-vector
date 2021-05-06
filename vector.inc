@@ -1,7 +1,3 @@
-#if defined _inc_vector
-    #undef _inc_vector
-#endif
-
 #if defined _vector_included
     #endinput
 #endif
@@ -16,25 +12,28 @@ enum e_VEC_DATA()
 {
 	e_VEC_DATA_LEN,
 	e_VEC_DATA_GROWTH,
-	e_VEC_DATA_IS_ORDERED
+	e_VEC_DATA_IS_ORDERED,
+	e_VEC_DATA_IS_READ_ONLY
 }
 
 enum E_VEC_ERROR()
 {
 	E_VEC_ERROR_OK,
 	E_VEC_ERROR_NO_ALLOC,
+	E_VEC_ERROR_READ_ONLY,
+	E_VEC_ERROR_NOT_FOUND,
 	E_VEC_ERROR_INVALID_INDEX
 }
 
 #define Vec_GetAsArray(%0,%1)			Malloc_GetData(Alloc:%0,(%1)+_:e_VEC_DATA)
-#define Vec_GetString(%0,%1)			Malloc_GetData(Alloc:%0,(%1)+_:e_VEC_DATA)
+#define Vec_GetString(%0)			Malloc_GetData(Alloc:%0,_:e_VEC_DATA)
 #define VEC_FOREACH(new%0:%1) for(new i__=0,len__=Vec_Len(%1),%0=Vec_Get(%1,0);i__<len__;++i__,%0=Vec_Get(%1,i__))
 
 #define INVALID_VECTOR			(Vec:NO_ALLOC)
 
 stock Vec:Vec_New(capacity, bool:isOrdered = false, growth = VEC_DEFAULT_GROWTH)
 {
-	new Alloc:newVec = calloc(capacity + 3);
+	new Alloc:newVec = calloc(capacity + _:e_VEC_DATA);
 	if(newVec == NO_ALLOC)
 		return INVALID_VECTOR;
 	Malloc_Set(newVec, e_VEC_DATA_GROWTH, growth);
@@ -73,6 +72,21 @@ stock bool:Vec_IsOrdered(Vec:vector)
 	return bool:Malloc_Get(Alloc:vector, e_VEC_DATA_IS_ORDERED);
 }
 
+stock Vec_SetOrdered(Vec:vector, bool:set)
+{
+	Malloc_Set(Alloc:vector, e_VEC_DATA_IS_ORDERED, _:set);
+}
+
+stock bool:Vec_IsReadOnly(Vec:vector)
+{
+	return bool:Malloc_Get(Alloc:vector, e_VEC_DATA_IS_READ_ONLY);
+}
+
+stock Vec_SetReadOnly(Vec:vector, bool:set)
+{
+	Malloc_Set(Alloc:vector, e_VEC_DATA_IS_READ_ONLY, _:set);
+}
+
 stock Vec_Growth(Vec:vector)
 {
 	return Malloc_Get(Alloc:vector, e_VEC_DATA_GROWTH);
@@ -100,6 +114,8 @@ static stock Vec_SetLen(Vec:vector, len)
 
 stock E_VEC_ERROR:Vec_Append(&Vec:vector, value)
 {
+	if(Vec_IsReadOnly(vector))
+		return E_VEC_ERROR_READ_ONLY;
 	new size =  Vec_Capacity(vector);
 	if(size <= Vec_Len(vector))
 	{
@@ -114,15 +130,22 @@ stock E_VEC_ERROR:Vec_Append(&Vec:vector, value)
 
 stock E_VEC_ERROR:Vec_AppendChar(&Vec:vector, value)
 {
-	Vec_Append(vector, value);
+	new E_VEC_ERROR:err = Vec_Append(vector, value);
+	if(err != E_VEC_ERROR_OK)
+		return err;
 	//make sure to add a null terminator
-	Vec_Append(vector, '\0');
+	err = Vec_Append(vector, '\0');
+	if(err != E_VEC_ERROR_OK)
+		return err;
 	//make sure the null terminator gets deleted next time we append
 	Vec_SetLen(vector, Vec_Len(vector) - 1);
+	return E_VEC_ERROR_OK;
 }
 
 stock E_VEC_ERROR:Vec_Set(&Vec:vector, index, value)
 {
+	if(Vec_IsReadOnly(vector))
+		return E_VEC_ERROR_READ_ONLY;
 	if(index >= Vec_Capacity(vector))
 	{
 		if(Vec_ReSize(vector, index + Vec_Growth(vector)) != E_VEC_ERROR_OK)
@@ -136,8 +159,10 @@ stock E_VEC_ERROR:Vec_Set(&Vec:vector, index, value)
 	return E_VEC_ERROR_OK;
 }
 
-stock Vec_RemoveAt(Vec:vector, index)
+stock E_VEC_ERROR:Vec_RemoveAt(Vec:vector, index)
 {
+	if(Vec_IsReadOnly(vector))
+		return E_VEC_ERROR_READ_ONLY;
 	new len = Vec_Len(vector);
 	if(!Vec_IsOrdered(vector))
 	{
@@ -154,19 +179,24 @@ stock Vec_RemoveAt(Vec:vector, index)
 		Vec_Set(vector, len - 1, 0);
 		Vec_SetLen(vector, len - 1);
 	}
+
+	return E_VEC_ERROR_OK;
 }
 
-stock Vec_RemoveFirstElement(Vec:vector, value)
+stock E_VEC_ERROR:Vec_RemoveFirstElement(Vec:vector, value, &idx = 0)
 {
+	if(Vec_IsReadOnly(vector))
+		return E_VEC_ERROR_READ_ONLY;
 	for(new i = 0; i < Vec_Len(vector); ++i)
 	{
 		if(Vec_Get(vector, i) == value)
 		{
 			Vec_RemoveAt(Vec:vector, i);
-			return i;
+			idx = i;
+			return E_VEC_ERROR_OK;
 		}
 	}
-	return -1;
+	return E_VEC_ERROR_NOT_FOUND;
 }
 
 stock Vec_Get(Vec:vector, index)
@@ -187,10 +217,13 @@ stock bool:Vec_Contains(Vec:vector, value)
 	return false;
 }
 
-stock Vec_Clear(Vec:vector)
+stock E_VEC_ERROR:Vec_Clear(Vec:vector)
 {
+	if(Vec_IsReadOnly(vector))
+		return E_VEC_ERROR_READ_ONLY;
 	memset(Vec_GetAsArray(vector, 0), 0, Vec_Len(vector));
 	Vec_SetLen(vector, 0);
+	return E_VEC_ERROR_OK;
 }
 
 stock Vec_FindFirst(Vec:vector, value)
@@ -205,6 +238,8 @@ stock Vec_FindFirst(Vec:vector, value)
 
 stock E_VEC_ERROR:Vec_AppendArray(&Vec:vector, const arr[], size = sizeof arr)
 {
+	if(Vec_IsReadOnly(vector))
+		return E_VEC_ERROR_READ_ONLY;
 	new len = Vec_Len(vector);
 	new requiredSize = len + size;
 	if(requiredSize >= Vec_Capacity(vector))
@@ -220,6 +255,8 @@ stock E_VEC_ERROR:Vec_AppendArray(&Vec:vector, const arr[], size = sizeof arr)
 
 stock E_VEC_ERROR:Vec_AppendString(&Vec:vector, const str[], len = -1)
 {
+	if(Vec_IsReadOnly(vector))
+		return E_VEC_ERROR_READ_ONLY;
 	if(len <= 0)
 		len = strlen(str);
 
@@ -234,6 +271,8 @@ stock E_VEC_ERROR:Vec_AppendString(&Vec:vector, const str[], len = -1)
 
 stock E_VEC_ERROR:Vec_SetArray(&Vec:vector, const arr[], index ,size = sizeof arr)
 {
+	if(Vec_IsReadOnly(vector))
+		return E_VEC_ERROR_READ_ONLY;
 	new requiredSize = index + size;
 	if(requiredSize >= Vec_Capacity(vector))
 	{
@@ -249,6 +288,8 @@ stock E_VEC_ERROR:Vec_SetArray(&Vec:vector, const arr[], index ,size = sizeof ar
 
 stock E_VEC_ERROR:Vec_AppendVector(&Vec:vector, Vec:toAppend, start = 0, end = 0)
 {
+	if(Vec_IsReadOnly(vector))
+		return E_VEC_ERROR_READ_ONLY;
 	if(end <= 0 || end > Vec_Len(toAppend))
 		end = Vec_Len(toAppend);
 	return Vec_AppendArray(vector, Vec_GetAsArray(toAppend, start), end-start);
@@ -256,6 +297,8 @@ stock E_VEC_ERROR:Vec_AppendVector(&Vec:vector, Vec:toAppend, start = 0, end = 0
 
 stock E_VEC_ERROR:Vec_Swap(Vec:vector, index1, index2)
 {
+	if(Vec_IsReadOnly(vector))
+		return E_VEC_ERROR_READ_ONLY;
 	new len = Vec_Len(vector);
 	if(index1 >= len || index2 >= len)
 		return E_VEC_ERROR_INVALID_INDEX;
@@ -268,6 +311,8 @@ stock E_VEC_ERROR:Vec_Swap(Vec:vector, index1, index2)
 
 stock E_VEC_ERROR:Vec_Reverse(Vec:vector, start = 0, end = 0)
 {
+	if(Vec_IsReadOnly(vector))
+		return E_VEC_ERROR_READ_ONLY;
 	new len = Vec_Len(vector);
 	if(end == 0 || end > len)
 		end = len - 1;
@@ -294,6 +339,6 @@ stock Vec_CopyTo(Vec:vector, dest[], start = 0, end = 0, size = sizeof dest)
 stock Vec_Delete(&Vec:vector)
 {
 	new res = Malloc_Free(Alloc:vector);
-	vector = Vec:NO_ALLOC;
+	vector = INVALID_VECTOR;
 	return res;
 }
