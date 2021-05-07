@@ -462,3 +462,15 @@ Test:ContainsBy()
 	ASSERT(Vec_ContainsBy(vec, using inline isOdd));
 	ASSERT_FALSE(Vec_ContainsBy(vec, using inline isMultipleOf8));
 }
+
+Test:FindFirstBy()
+{
+	new Vec:vec = Vec_NewFromArray(10, {1, 2, 2, 3, 4});
+	inline isEven(val)
+		inline_return val % 2 == 0;
+	inline isMultipleOf8(val)
+		inline_return val % 8 == 0;
+
+	ASSERT_EQ(Vec_FindFirstBy(vec, using inline isEven), 1);
+	ASSERT_EQ(Vec_FindFirstBy(vec, using inline isMultipleOf8), -1);
+}

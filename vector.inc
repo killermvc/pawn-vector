@@ -259,6 +259,8 @@ stock E_VEC_ERROR:Vec_RemoveAllElements(Vec:vector, value)
 	return Vec_RemoveAllBy(vector, using inline remAll);
 }
 
+
+
 stock Vec_Get(Vec:vector, index)
 {
 	if(index >= Vec_Len(vector))
@@ -295,7 +297,7 @@ stock E_VEC_ERROR:Vec_Clear(Vec:vector)
 	return E_VEC_ERROR_OK;
 }
 
-stock FindFirstBy(Vec:vector, Func:predicate<i>)
+stock Vec_FindFirstBy(Vec:vector, Func:predicate<i>)
 {
 	for(new i = 0, len = Vec_Len(vector); i < len; ++i)
 	{
@@ -311,7 +313,7 @@ stock Vec_FindFirst(Vec:vector, value)
 	{
 		inline_return val == value;
 	}
-	return FindFirstBy(vector, using inline findFirst);
+	return Vec_FindFirstBy(vector, using inline findFirst);
 }
 
 stock E_VEC_ERROR:Vec_AppendArray(&Vec:vector, const arr[], size = sizeof arr)
