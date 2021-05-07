@@ -201,11 +201,9 @@ stock E_VEC_ERROR:Vec_RemoveFirstBy(Vec:vector, Func:predicate<i>)
 
 stock E_VEC_ERROR:Vec_RemoveFirstElement(Vec:vector, value)
 {
-	inline remValue(val)
-	{
+	inline matchValue(val)
 		inline_return val == value;
-	}
-	return Vec_RemoveFirstBy(vector, using inline remValue);
+	return Vec_RemoveFirstBy(vector, using inline matchValue);
 }
 
 stock E_VEC_ERROR:Vec_RemoveLastBy(Vec:vector, Func:predicate<i>)
@@ -226,11 +224,10 @@ stock E_VEC_ERROR:Vec_RemoveLastBy(Vec:vector, Func:predicate<i>)
 
 stock E_VEC_ERROR:Vec_RemoveLastElement(Vec:vector, value)
 {
-	inline remLast(val)
-	{
+	inline matchValue(val)
 		inline_return val == value;
-	}
-	return Vec_RemoveLastBy(vector, using inline remLast);
+
+	return Vec_RemoveLastBy(vector, using inline matchValue);
 }
 
 stock E_VEC_ERROR:Vec_RemoveAllBy(Vec:vector, Func:predicate<i>)
@@ -252,14 +249,10 @@ stock E_VEC_ERROR:Vec_RemoveAllBy(Vec:vector, Func:predicate<i>)
 
 stock E_VEC_ERROR:Vec_RemoveAllElements(Vec:vector, value)
 {
-	inline remAll(val)
-	{
+	inline matchValue(val)
 		inline_return val == value;
-	}
-	return Vec_RemoveAllBy(vector, using inline remAll);
+	return Vec_RemoveAllBy(vector, using inline matchValue);
 }
-
-
 
 stock Vec_Get(Vec:vector, index)
 {
@@ -281,11 +274,9 @@ stock bool:Vec_ContainsBy(Vec:vector, Func:predicate<i>)
 
 stock bool:Vec_Contains(Vec:vector, value)
 {
-	inline contains(val)
-	{
+	inline matchValue(val)
 		inline_return val == value;
-	}
-	return Vec_ContainsBy(vector, using inline contains);
+	return Vec_ContainsBy(vector, using inline matchValue);
 }
 
 stock E_VEC_ERROR:Vec_Clear(Vec:vector)
@@ -309,11 +300,51 @@ stock Vec_FindFirstBy(Vec:vector, Func:predicate<i>)
 
 stock Vec_FindFirst(Vec:vector, value)
 {
-	inline findFirst(val)
-	{
+	inline matchValue(val)
 		inline_return val == value;
+	return Vec_FindFirstBy(vector, using inline matchValue);
+}
+
+stock Vec_FindLastBy(Vec:vector, Func:predicate<i>)
+{
+	for(new i = Vec_Len(vector) - 1; i >= 0; --i)
+	{
+		if(@.predicate(Vec_Get(vector, i)))
+			return i;
 	}
-	return Vec_FindFirstBy(vector, using inline findFirst);
+	return -1;
+}
+
+stock Vec_FindLastElement(Vec:vector, value)
+{
+	inline matchValue(val)
+		inline_return val == value;
+	return Vec_FindLastBy(vector, using inline matchValue);
+}
+
+stock Vec:Vec_FindAllBy(Vec:vector, Func:predicate<i>)
+{
+	new Vec:foundIndexes = Vec_New(10);
+	for(new i = 0, len = Vec_Len(vector); i < len; ++i)
+	{
+		if(@.predicate(Vec_Get(vector, i)))
+		{
+			Vec_Append(foundIndexes, i);
+		}
+	}
+	if(Vec_Len(foundIndexes) == 0)
+	{
+		Vec_Delete(foundIndexes);
+		foundIndexes = INVALID_VECTOR;
+	}
+	return foundIndexes;
+}
+
+stock Vec:Vec_FindAllElements(Vec:vector, value)
+{
+	inline matchValue(val)
+		inline_return val == value;
+	return Vec_FindAllBy(vector, using inline matchValue);
 }
 
 stock E_VEC_ERROR:Vec_AppendArray(&Vec:vector, const arr[], size = sizeof arr)

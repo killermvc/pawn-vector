@@ -474,3 +474,62 @@ Test:FindFirstBy()
 	ASSERT_EQ(Vec_FindFirstBy(vec, using inline isEven), 1);
 	ASSERT_EQ(Vec_FindFirstBy(vec, using inline isMultipleOf8), -1);
 }
+
+Test:FindLastBy()
+{
+	new Vec:vec = Vec_NewFromArray(10, {1, 2, 2, 3, 4});
+	inline isOdd(val)
+		inline_return val % 2 != 0;
+	inline isMultipleOf8(val)
+		inline_return val % 8 == 0;
+
+	ASSERT_EQ(Vec_FindLastBy(vec, using inline isOdd), 3);
+	ASSERT_EQ(Vec_FindLastBy(vec, using inline isMultipleOf8), -1);
+}
+
+Test:FindLastElement()
+{
+	new Vec:vec = Vec_NewFromArray(10, {1, 2, 2, 3, 4});
+
+	ASSERT_EQ(Vec_FindLastElement(vec, 2), 2);
+	ASSERT_EQ(Vec_FindLastElement(vec, 3), 3);
+	ASSERT_EQ(Vec_FindLastElement(vec, 5), -1);
+}
+
+Test:FindAllby()
+{
+	new
+		Vec:vec = Vec_NewFromArray(10, {1, 2, 3, 4, 5, 6, 7, 8}),
+		expected1[] = {1, 3, 5, 7},
+		expected2[] = {0, 2, 4, 6};
+	inline isEven(val)
+		inline_return val % 2 == 0;
+	inline isOdd(val)
+		inline_return val % 2 != 0;
+
+	new
+		Vec:found1 = Vec_FindAllBy(vec, using inline isEven),
+		Vec:found2 = Vec_FindAllBy(vec, using inline isOdd);
+
+	for(new i = 0; i < 4; ++i)
+		ASSERT_EQ(Vec_Get(found1, i), expected1[i]);
+	for(new i = 0; i < 4; ++i)
+		ASSERT_EQ(Vec_Get(found2, i), expected2[i]);
+}
+
+Test:FindAllElements()
+{
+	new
+		Vec:vec = Vec_NewFromArray(10, {1, 2, 1, 2, 1, 2, 1, 2}),
+		expected1[] = {1, 3, 5, 7},
+		expected2[] = {0, 2, 4, 6};
+
+	new
+		Vec:found1 = Vec_FindAllElements(vec, 2),
+		Vec:found2 = Vec_FindAllElements(vec, 1);
+
+	for(new i = 0; i < 4; ++i)
+		ASSERT_EQ(Vec_Get(found1, i), expected1[i]);
+	for(new i = 0; i < 4; ++i)
+		ASSERT_EQ(Vec_Get(found2, i), expected2[i]);
+}
