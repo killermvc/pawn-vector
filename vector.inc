@@ -4,6 +4,7 @@
 #define _vector_included
 
 #include <a_samp>
+#include <YSI_Coding\y_inline>
 #include <YSI_Coding\y_malloc>
 
 #define VEC_DEFAULT_GROWTH		(16)
@@ -183,20 +184,79 @@ stock E_VEC_ERROR:Vec_RemoveAt(Vec:vector, index)
 	return E_VEC_ERROR_OK;
 }
 
-stock E_VEC_ERROR:Vec_RemoveFirstElement(Vec:vector, value, &idx = 0)
+stock E_VEC_ERROR:Vec_RemoveFirstBy(Vec:vector, Func:predicate<i>)
 {
 	if(Vec_IsReadOnly(vector))
 		return E_VEC_ERROR_READ_ONLY;
 	for(new i = 0; i < Vec_Len(vector); ++i)
 	{
-		if(Vec_Get(vector, i) == value)
+		if(@.predicate(Vec_Get(vector, i)))
 		{
-			Vec_RemoveAt(Vec:vector, i);
-			idx = i;
+			Vec_RemoveAt(vector, i);
 			return E_VEC_ERROR_OK;
 		}
 	}
 	return E_VEC_ERROR_NOT_FOUND;
+}
+
+stock E_VEC_ERROR:Vec_RemoveFirstElement(Vec:vector, value)
+{
+	inline remValue(val)
+	{
+		inline_return val == value;
+	}
+	return Vec_RemoveFirstBy(vector, using inline remValue);
+}
+
+stock E_VEC_ERROR:Vec_RemoveLastBy(Vec:vector, Func:predicate<i>)
+{
+	if(Vec_IsReadOnly(vector))
+		return E_VEC_ERROR_READ_ONLY;
+
+	for(new i = Vec_Len(vector) - 1; i >= 0; --i)
+	{
+		if(@.predicate(Vec_Get(vector, i)))
+		{
+			Vec_RemoveAt(vector, i);
+			return E_VEC_ERROR_OK;
+		}
+	}
+	return E_VEC_ERROR_NOT_FOUND;
+}
+
+stock E_VEC_ERROR:Vec_RemoveLastElement(Vec:vector, value)
+{
+	inline remLast(val)
+	{
+		inline_return val == value;
+	}
+	return Vec_RemoveLastBy(vector, using inline remLast);
+}
+
+stock E_VEC_ERROR:Vec_RemoveAllBy(Vec:vector, Func:predicate<i>)
+{
+	if(Vec_IsReadOnly(vector))
+		return E_VEC_ERROR_READ_ONLY;
+
+	new found = false;
+	for(new i = 0; i < Vec_Len(vector); ++i)
+	{
+		if(@.predicate(Vec_Get(vector, i)))
+		{
+			Vec_RemoveAt(vector, i);
+			found = true;
+		}
+	}
+	return found ? E_VEC_ERROR_OK : E_VEC_ERROR_NOT_FOUND;
+}
+
+stock E_VEC_ERROR:Vec_RemoveAllElements(Vec:vector, value)
+{
+	inline remAll(val)
+	{
+		inline_return val == value;
+	}
+	return Vec_RemoveAllBy(vector, using inline remAll);
 }
 
 stock Vec_Get(Vec:vector, index)
@@ -207,14 +267,23 @@ stock Vec_Get(Vec:vector, index)
 	return Malloc_Get(Alloc:vector, _:e_VEC_DATA + index);
 }
 
-stock bool:Vec_Contains(Vec:vector, value)
+stock bool:Vec_ContainsBy(Vec:vector, Func:predicate<i>)
 {
 	for(new i = 0, len = Vec_Len(vector); i < len; ++i)
 	{
-		if(Vec_Get(vector, i) == value)
+		if(@.predicate(Vec_Get(vector, i)))
 			return true;
 	}
 	return false;
+}
+
+stock bool:Vec_Contains(Vec:vector, value)
+{
+	inline contains(val)
+	{
+		inline_return val == value;
+	}
+	return Vec_ContainsBy(vector, using inline contains);
 }
 
 stock E_VEC_ERROR:Vec_Clear(Vec:vector)
@@ -226,14 +295,23 @@ stock E_VEC_ERROR:Vec_Clear(Vec:vector)
 	return E_VEC_ERROR_OK;
 }
 
-stock Vec_FindFirst(Vec:vector, value)
+stock FindFirstBy(Vec:vector, Func:predicate<i>)
 {
 	for(new i = 0, len = Vec_Len(vector); i < len; ++i)
 	{
-		if(Vec_Get(vector, i) == value)
+		if(@.predicate(Vec_Get(vector, i)))
 			return i;
 	}
 	return -1;
+}
+
+stock Vec_FindFirst(Vec:vector, value)
+{
+	inline findFirst(val)
+	{
+		inline_return val == value;
+	}
+	return FindFirstBy(vector, using inline findFirst);
 }
 
 stock E_VEC_ERROR:Vec_AppendArray(&Vec:vector, const arr[], size = sizeof arr)

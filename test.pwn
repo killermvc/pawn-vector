@@ -374,3 +374,91 @@ Test:String()
 	ASSERT_SAME(Vec_GetAsArray(vec,0), "Hello, world");
 	ASSERT_EQ(Vec_Len(vec), 12);
 }
+
+Test:RemoveFirstBy()
+{
+	new
+		Vec:vec = Vec_NewFromArray(10, {1, 2, 3, 4, 5}),
+		expected[] = {1, 5, 3, 4};
+
+	inline isEven(val)
+	{
+		inline_return val % 2 == 0;
+	}
+	Vec_RemoveFirstBy(vec, using inline isEven);
+
+	for(new i = 0; i < 4; ++i)
+		ASSERT_EQ(Vec_Get(vec, i), expected[i]);
+}
+
+Test:RemoveLastBy()
+{
+	new
+		Vec:vec = Vec_NewFromArray(10, {1, 2, 3, 4, 5}),
+		expected[] = {1, 2, 3, 5};
+
+	inline isEven(val)
+	{
+		inline_return val % 2 == 0;
+	}
+	Vec_RemoveLastBy(vec, using inline isEven);
+
+	for(new i = 0; i < 4; ++i)
+		ASSERT_EQ(Vec_Get(vec, i), expected[i]);
+}
+
+Test:RemoveLastElement()
+{
+	new
+		Vec:vec = Vec_NewFromArray(10, {1, 3, 3, 2, 5}),
+		expected[] = {1, 3, 5, 2};
+
+	Vec_RemoveLastElement(vec, 3);
+
+	for(new i = 0; i < 4; ++i)
+		ASSERT_EQ(Vec_Get(vec, i), expected[i]);
+}
+
+Test:RemoveAllBy()
+{
+	new
+		Vec:vec = Vec_NewFromArray(10, {1, 2, 3, 4, 5}),
+		expected[] = {1, 5, 3};
+
+	inline isEven(val)
+	{
+		inline_return val % 2 == 0;
+	}
+	Vec_RemoveAllBy(vec, using inline isEven);
+
+	for(new i = 0; i < 3; ++i)
+		ASSERT_EQ(Vec_Get(vec, i), expected[i]);
+}
+
+Test:RemoveAllElements()
+{
+	new
+		Vec:vec = Vec_NewFromArray(10, {1, 2, 2, 4, 5}),
+		expected[] = {1, 5, 4};
+
+	Vec_RemoveAllElements(vec, 2);
+
+	for(new i = 0; i < 3; ++i)
+		ASSERT_EQ(Vec_Get(vec, i), expected[i]);
+}
+
+Test:ContainsBy()
+{
+	new
+		Vec:vec = Vec_NewFromArray(10, {1, 2, 2, 4, 5});
+	inline isEven(val)
+		inline_return val % 2 == 0;
+	inline isOdd(val)
+		inline_return val % 2 != 0;
+	inline isMultipleOf8(val)
+		inline_return val % 8 == 0;
+
+	ASSERT(Vec_ContainsBy(vec, using inline isEven));
+	ASSERT(Vec_ContainsBy(vec, using inline isOdd));
+	ASSERT_FALSE(Vec_ContainsBy(vec, using inline isMultipleOf8));
+}
