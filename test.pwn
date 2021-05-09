@@ -533,3 +533,25 @@ Test:FindAllElements()
 	for(new i = 0; i < 4; ++i)
 		ASSERT_EQ(Vec_Get(found2, i), expected2[i]);
 }
+
+Test:TrueForAll()
+{
+	new Vec:vec = Vec_NewFromArray(10, {2, 4, 6 ,8, 10});
+
+	inline isEven(val)
+		inline_return val % 2 == 0;
+
+	ASSERT(Vec_TrueForAll(vec, using inline isEven));
+	Vec_Append(vec, 1);
+	ASSERT_FALSE(Vec_TrueForAll(vec, using inline isEven));
+}
+
+Test:BinarySearch()
+{
+	new Vec:vec = Vec_NewFromArray(10, {1, 2, 3, 4, 5, 6, 7, 8});
+
+	ASSERT_EQ(Vec_BinarySearch(vec, 3), 2);
+	ASSERT_EQ(Vec_BinarySearch(vec, 7), 6);
+	ASSERT_EQ(Vec_BinarySearch(vec, 8), 7);
+	ASSERT_EQ(Vec_BinarySearch(vec, 9), -1);
+}

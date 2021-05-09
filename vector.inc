@@ -347,6 +347,60 @@ stock Vec:Vec_FindAllElements(Vec:vector, value)
 	return Vec_FindAllBy(vector, using inline matchValue);
 }
 
+stock bool:Vec_TrueForAll(Vec:vector, Func:predicate<i>)
+{
+	VEC_FOREACH(new val : vector)
+	{
+		if(!@.predicate(val))
+			return false;
+	}
+	return true;
+}
+
+stock Vec_BinarySearchBy(Vec:vector, Func:predicate<i>)
+{
+	new first = 0, last = Vec_Len(vector) - 1, mid, check;
+
+	while(first < last)
+	{
+		if(!@.predicate(Vec_Get(vector, first)))
+			return first;
+		if(!@.predicate(Vec_Get(vector, last)))
+			return last;
+
+		mid = (first + last)/2;
+		check = @.predicate(Vec_Get(vector, mid));
+
+		if(!check)
+			return mid;
+		else if(check == -1)
+		{
+			first = mid+1;
+			--last;
+		}
+		else
+		{
+			last = mid-1;
+			++first;
+		}
+	}
+	return -1;
+}
+
+stock Vec_BinarySearch(Vec:vector, value)
+{
+	inline compareValues(val)
+	{
+		if(val == value)
+			inline_return 0;
+		else if(val < value)
+			inline_return -1;
+		else
+			inline_return 1;
+	}
+	return Vec_BinarySearchBy(vector, using inline compareValues);
+}
+
 stock E_VEC_ERROR:Vec_AppendArray(&Vec:vector, const arr[], size = sizeof arr)
 {
 	if(Vec_IsReadOnly(vector))
