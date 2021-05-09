@@ -501,6 +501,42 @@ stock Vec_CopyTo(Vec:vector, dest[], start = 0, end = 0, size = sizeof dest)
 	memcpy(dest, Vec_GetAsArray(vector, start), 0, (end - start)*4, end);
 }
 
+static stock Vec_QSPartition(Vec:unsorted, Func:Comparer<ii>, start, end) {
+    new pivot = Vec_Get(unsorted, end);
+    new i = start - 1;
+    for(new j = start; j <= end-1; j++) {
+        if(@.Comparer(Vec_Get(unsorted, j), pivot)) {
+            i++;
+            Vec_Swap(unsorted, i, j);
+        }
+    }
+    Vec_Swap(unsorted, i+1, end);
+    return i+1;
+}
+
+stock E_VEC_ERROR:Vec_SortAt(Vec:unsorted, Func:Comparer<ii>, start = 0, end) {
+    if(Vec_IsReadOnly(unsorted))
+		return E_VEC_ERROR_READ_ONLY;
+
+    if(start < end) {
+        new pi = Vec_QSPartition(unsorted, Comparer, start, end);
+		printf("%d, %d, %d", start, end, pi);
+        Vec_SortAt(unsorted, Comparer, start, pi-1);
+        Vec_SortAt(unsorted, Comparer, pi+1, end);
+        return E_VEC_ERROR_OK;
+    }
+    return E_VEC_ERROR_INVALID_INDEX;
+}
+
+stock E_VEC_ERROR:Vec_Sort(Vec:unsorted, start = 0, end = 0) {
+    inline defaultComparer(value1, value2) {
+        inline_return value1 <= value2 ? true : false;
+    }
+	if(end == 0)
+		end = Vec_Len(unsorted) - 1;
+    return Vec_SortAt(unsorted, using inline defaultComparer, start, end);
+}
+
 stock Vec_Delete(&Vec:vector)
 {
 	new res = Malloc_Free(Alloc:vector);

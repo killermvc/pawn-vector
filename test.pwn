@@ -555,3 +555,15 @@ Test:BinarySearch()
 	ASSERT_EQ(Vec_BinarySearch(vec, 8), 7);
 	ASSERT_EQ(Vec_BinarySearch(vec, 9), -1);
 }
+
+Test:Sort()
+{
+	new
+		Vec:vec = Vec_NewFromArray(10, {7, 4, 5, 3, 1, 8, 2, 6}),
+		sorted[] = {1, 2, 3, 4, 5, 6, 7, 8};
+
+	Vec_Sort(vec);
+
+	for(new i = 0; i < 8; ++i)
+		ASSERT(Vec_Get(vec, i) == sorted[i]);
+}
