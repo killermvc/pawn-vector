@@ -27,8 +27,15 @@ enum E_VEC_ERROR()
 }
 
 #define Vec_GetAsArray(%0,%1)			Malloc_GetData(Alloc:%0,(%1)+_:e_VEC_DATA)
-#define Vec_GetString(%0)			Malloc_GetData(Alloc:%0,_:e_VEC_DATA)
-#define VEC_FOREACH(new%0:%1) for(new i__=0,len__=Vec_Len(%1),%0=Vec_Get(%1,0);i__<len__;++i__,%0=Vec_Get(%1,i__))
+#define Vec_GetString(%0)				Malloc_GetData(Alloc:%0,_:e_VEC_DATA)
+
+#define VEC_FOREACH(%9new%0:%1)			for(new i__=_:VEC_FOREACH_R:VEC_FOREACH_N:(%0,%1)
+
+#define VEC_FOREACH_R:VEC_FOREACH_N:(%0,%1[%2..%3]%4)							\
+	%2,len__=%3,%0=Vec_Get(%1,%2);i__<len__;++i__,%0=Vec_Get(%1,i__))
+
+#define VEC_FOREACH_N:(%0,%1)													\
+	0,len__=Vec_Len(%1),%0=Vec_Get(%1,0);i__<len__;++i__,%0=Vec_Get(%1,i__))
 
 #define INVALID_VECTOR			(Vec:NO_ALLOC)
 

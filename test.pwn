@@ -360,7 +360,21 @@ Test:ForEach()
 
 	VEC_FOREACH(new value : vec)
 	{
-		ASSERT_EQ(value, Vec_Get(vec, i));
+		ASSERT_EQ(Vec_Get(vec, i), value);
+		i++;
+	}
+}
+
+Test:ForEach_Range()
+{
+	new
+		arr[] = {1, 2, 3, 4, 5, 6, 7, 8},
+		Vec:vec = Vec_NewFromArray(10, arr),
+		i = 2;
+
+	VEC_FOREACH(new value : vec[2..6])
+	{
+		ASSERT_EQ(Vec_Get(vec, i), value);
 		i++;
 	}
 }
