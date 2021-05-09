@@ -7,16 +7,9 @@
 		"sampctl/samp-stdlib",
 		"pawn-lang/YSI-Includes@5.x"
 	],
-	"builds": [
-		{
-			"name": "dev",
-			"version": "3.10.8"
-		}
-	],
 	"runtime": {
 		"version": "0.3.7",
-		"mode": "y_testing",
-		"echo": "-",
+		"mode": "main",
 		"rcon_password": "password",
 		"port": 7777
 	}

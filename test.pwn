@@ -4,501 +4,579 @@
 #define YSI_NO_OPTIMISATION_MESSAGE
 #define YSI_NO_VERSION_CHECK
 
-#include <a_samp>
 #include "vector.inc"
 #include <YSI_Core\y_testing>
 
+Test:New()
+{
+	new Vec:vec = Vec_New(25, true, 28);
 
-Test:New() {
-	new Vec:vec = Vec_New();
-    ASSERT(Vec_IsValid(vec));
-    Vec_Delete(vec);
+	//y_malloc allocates multiples of 16 cells. so the capacity allocated is 32.
+	//However y_malloc uses one of this cells to store the capacity
+	//and pawn-vector uses 4 more to store the length, the growth, if it's ordered and if it's read only
+	//thus the reported capacity is 28.
+	ASSERT_NE(vec, INVALID_VECTOR);
+	ASSERT_EQ(Vec_Capacity(vec), 27);
+	ASSERT_EQ(Vec_Len(vec), 0);
+	ASSERT_EQ(Vec_Growth(vec), 28);
+	ASSERT(Vec_IsOrdered(vec));
+
+	Vec_Delete(vec);
 }
 
-Test:NewArray() {
-	new arr[] = {1, 2, 3, 4, 5, 6};
-    new Vec:vec = Vec_NewFromArray(arr, sizeof arr);
-    ASSERT(Vec_IsValid(vec));
-    for(new i = 0; i < 6; i++) {
-        ASSERT(Vec_GetValue(vec, i) == arr[i]);
-    }
-    Vec_Delete(vec);
+Test:Append()
+{
+	new Vec:vec = Vec_New(10);
+
+	Vec_Append(vec, 16);
+	Vec_Append(vec, 17);
+	Vec_Append(vec, 18);
+
+	ASSERT_EQ(Vec_Len(vec), 3);
+	ASSERT_EQ(Malloc_Get(Alloc:vec, _:e_VEC_DATA), 16);
+	ASSERT_EQ(Malloc_Get(Alloc:vec, _:e_VEC_DATA + 1), 17);
+	ASSERT_EQ(Malloc_Get(Alloc:vec, _:e_VEC_DATA + 2), 18);
+
+	Vec_Delete(vec);
 }
 
-Test:append() {
-    new Vec:vec = Vec_New();
+Test:AppendResize()
+{
+	new Vec:vec = Vec_New(10, false, 10);
 
-    Vec_Append(vec, 1);
-    Vec_Append(vec, 2);
-    Vec_Append(vec, 3);
+	for(new i = 0; i < 14; ++i)
+	{
+		Vec_Append(vec, i+1);
+	}
 
-    ASSERT(Vec_GetValue(vec, 0) == 1);
-    ASSERT(Vec_GetValue(vec, 1) == 2);
-    ASSERT(Vec_GetValue(vec, 2) == 3);
-    Vec_Delete(vec);
+	//y_malloc allocates multiples of 16 cells. when creating the vector, the capacity allocated is 16,
+	//after the resize is 32. However y_malloc uses one of this cells to store the capacity
+	//and pawn-vector uses 4 more to store the length, the growth if it's ordered and if it's read only
+	//thus the reported capacity is 27.
+	ASSERT_EQ(Vec_Capacity(vec), 27);
+	for(new i = 0; i < 14; ++i)
+	{
+		ASSERT_EQ(Vec_Get(vec, i), i+1);
+	}
+
+	Vec_Delete(vec);
 }
 
-Test:GetCapacity() {
-	new Vec:vec = Vec_New();
-    //y_malloc allocates at least the number of cells specified, but might be higher
-    ASSERT(Vec_GetCapacity(vec) >= VEC_DEFAULT_CAPACITY);
-    Vec_Delete(vec);
+Test:Get()
+{
+	new Vec:vec = Vec_New(10);
+
+	Vec_Append(vec, 16);
+	Vec_Append(vec, 17);
+	Vec_Append(vec, 18);
+
+	ASSERT_EQ(Vec_Get(vec, 0), 16);
+	ASSERT_EQ(Vec_Get(vec, 1), 17);
+	ASSERT_EQ(Vec_Get(vec, 2), 18);
+
+	Vec_Delete(vec);
 }
 
-Test:Resize() {
-	new Vec:vec = Vec_New();
+Test:Set()
+{
+	new Vec:vec = Vec_New(10);
 
-    Vec_Resize(vec, 51);
-    //y_malloc allocates at least the number of cells specified, but might be higher
-    ASSERT(Vec_GetCapacity(vec) >= 51);
+	Vec_Set(vec, 5, 7);
 
-    Vec_Resize(vec, 150);
-    //y_malloc allocates at least the number of cells specified, but might be higher
-    ASSERT(Vec_GetCapacity(vec) >= 150);
+	ASSERT_EQ(Vec_Len(vec), 6);
+	ASSERT_EQ(Vec_Get(vec, 5), 7);
 
-    Vec_Delete(vec);
+	Vec_Delete(vec);
 }
 
-Test:AppendArray() {
-	new Vec:vec = Vec_New();
-    new arr[] = {1,2,3};
+Test:SetPastCapacity()
+{
+	new Vec:vec = Vec_New(10);
 
-    Vec_AppendArray(vec, arr);
+	Vec_Set(vec, 12, 7);
 
-    ASSERT(Vec_GetValue(vec, 0) == 1);
-    ASSERT(Vec_GetValue(vec, 1) == 2);
-    ASSERT(Vec_GetValue(vec, 2) == 3);
+	ASSERT_EQ(Vec_Len(vec), 13);
+	ASSERT_EQ(Vec_Get(vec, 12), 7);
+	ASSERT_GE(Vec_Capacity(vec), 11 + VEC_DEFAULT_GROWTH);
 
-    Vec_Delete(vec);
+	Vec_Delete(vec);
 }
 
-Test:SetValue() {
-	new Vec:vec = Vec_New();
+Test:RemoveAtUnordered()
+{
+	new
+		Vec:vec = Vec_New(10),
+		expected[] = {1, 2, 5, 4, 0};
+	Vec_Append(vec, 1);
+	Vec_Append(vec, 2);
+	Vec_Append(vec, 3);
+	Vec_Append(vec, 4);
+	Vec_Append(vec, 5);
 
-    Vec_SetValue(vec, 2, 10);
-    ASSERT(Vec_GetValue(vec, 2) == 10);
+	Vec_RemoveAt(vec, 2);
 
-    Vec_Delete(vec);
+	for(new i = 0; i < sizeof expected; ++i)
+	{
+		ASSERT_EQ(Vec_Get(vec, i), expected[i]);
+	}
 }
 
-Test:RemoveAt() {
-    new arr[] = {1, 2, 3};
+Test:RemoveAtOrdered()
+{
+	new
+		Vec:vec = Vec_New(10, true),
+		expected[] = {1, 2, 4, 5, 0};
+	Vec_Append(vec, 1);
+	Vec_Append(vec, 2);
+	Vec_Append(vec, 3);
+	Vec_Append(vec, 4);
+	Vec_Append(vec, 5);
 
-    new Vec:vec = Vec_NewFromArray(arr, sizeof(arr));
+	Vec_RemoveAt(vec, 2);
 
-    Vec_RemoveAt(vec, 1);
-    ASSERT(Vec_GetValue(vec, 0) == 1);
-    ASSERT(Vec_GetValue(vec, 1) == 3);
-
-    Vec_Delete(vec);
+	for(new i = 0; i < sizeof expected; ++i)
+	{
+		ASSERT_EQ(Vec_Get(vec, i), expected[i]);
+	}
 }
 
-Test:Delete() {
-	new Vec:vec = Vec_New();
-    ASSERT(Vec_IsValid(vec));
+Test:RemoveFirstElementUnordered()
+{
+	new
+		Vec:vec = Vec_New(10),
+		expected[] = {1, 5, 3, 4, 0};
+	Vec_Append(vec, 1);
+	Vec_Append(vec, 2);
+	Vec_Append(vec, 3);
+	Vec_Append(vec, 4);
+	Vec_Append(vec, 5);
 
-    Vec_Delete(vec);
-    ASSERT(!Vec_IsValid(vec));
+	Vec_RemoveFirstElement(vec, 2);
+
+	for(new i = 0; i < sizeof expected; ++i)
+	{
+		ASSERT_EQ(Vec_Get(vec, i), expected[i]);
+	}
 }
 
-Test:CreateDeleteMany() {
-    new Vec:vecs[100];
+Test:RemoveFirstElementOrdered()
+{
+	new
+		Vec:vec = Vec_New(10, true),
+		expected[] = {1, 3, 4, 5, 0};
+	Vec_Append(vec, 1);
+	Vec_Append(vec, 2);
+	Vec_Append(vec, 3);
+	Vec_Append(vec, 4);
+	Vec_Append(vec, 5);
 
-    for(new i = 0; i < 100; i++) {
-        vecs[i] = Vec_New();
-    }
+	Vec_RemoveFirstElement(vec, 2);
 
-    for(new i = 0; i < 100; i++) {
-        Vec_Delete(vecs[i]);
-    }
+	for(new i = 0; i < sizeof expected; ++i)
+	{
+		ASSERT_EQ(Vec_Get(vec, i), expected[i]);
+	}
 }
 
-Test:RemoveAtOrdered() {
-    new arr[] = {1, 2, 3, 4, 5, 6};
-    new Vec:vec = Vec_NewFromArray(arr, VEC_DEFAULT_CAPACITY);
-    Vec_ToggleOrdered(vec, true);
+Test:Contains()
+{
+	new Vec:vec = Vec_New(10);
+	Vec_Append(vec, 7);
+	Vec_Append(vec, 28);
+	Vec_Append(vec, 46);
 
-    Vec_RemoveAt(vec, 2);
-    ASSERT(Vec_GetValue(vec, 0) == 1);
-    ASSERT(Vec_GetValue(vec, 1) == 2);
-    ASSERT(Vec_GetValue(vec, 2) == 4);
-    ASSERT(Vec_GetValue(vec, 3) == 5);
-    ASSERT(Vec_GetValue(vec, 4) == 6);
-
-    Vec_Delete(vec);
+	ASSERT(Vec_Contains(vec, 7));
+	ASSERT(Vec_Contains(vec, 28));
+	ASSERT(Vec_Contains(vec, 46));
+	ASSERT_FALSE(Vec_Contains(vec, 1));
+	ASSERT_FALSE(Vec_Contains(vec, 2));
+	ASSERT_FALSE(Vec_Contains(vec, 5));
 }
 
-Test:SizeIncrease() {
-    new Vec:vec = Vec_New(1, 10);
+Test:Clear()
+{
+	const CAPACITY = 12;
+	new Vec:vec = Vec_New(CAPACITY);
 
-    ASSERT(Vec_GetCapacity(vec) >= 1);
-    Vec_Append(vec, 1);
-    Vec_Append(vec, 2);
-    ASSERT(Vec_GetCapacity(vec) >= 11);
+	for(new i = 0; i < CAPACITY; ++i)
+	{
+		Vec_Append(vec, i+1);
+	}
 
-    Vec_Delete(vec);
+	Vec_Clear(vec);
+
+	for(new i = 0; i < CAPACITY; ++i)
+	{
+		ASSERT_EQ(Vec_Get(vec, i), 0);
+	}
 }
 
-Test:SetArray() {
-    new
-        arr[] = {1, 2, 3, 4, 5, 6},
-        arrToSet[] = {7, 8, 9},
-        resultArr[] = {1, 2, 8, 9, 5, 6},
-        Vec:vec = Vec_NewFromArray(arr, sizeof arr),
-        bool:pass = true;
+Test:FindFirst()
+{
+	new Vec:vec = Vec_New(10);
+	Vec_Append(vec, 1);
+	Vec_Append(vec, 2);
+	Vec_Append(vec, 3);
+	Vec_Append(vec, 2);
 
-    Vec_SetArray(vec, 2, arrToSet, 1);
-
-    for(new i = 0; i < 6; i++) {
-        if(Vec_GetValue(vec, i) != resultArr[i]) {
-            pass = false;
-        }
-    }
-
-    ASSERT(pass);
-
-    Vec_Delete(vec);
+	ASSERT_EQ(Vec_FindFirst(vec, 2), 1);
+	ASSERT_EQ(Vec_FindFirst(vec, 1), 0);
+	ASSERT_EQ(Vec_FindFirst(vec, 3), 2);
 }
 
-Test:Reverse() {
-    new
-        arr[] = {1, 2, 3, 4 ,5, 6},
-        arrReversed[] = {6, 5, 4, 3, 2, 1},
-        arrReversed2[] = {6, 5, 2, 3, 4, 1},
-        bool:pass = true,
-        Vec:vec = Vec_NewFromArray(arr, sizeof arr);
+Test:AppendArray()
+{
+	new
+		Vec:vec = Vec_New(10),
+		arr[] = {2, 3, 4, 5},
+		expected[] = {1, 2, 3, 4, 5};
+	Vec_Append(vec, 1);
 
-    Vec_Reverse(vec);
+	Vec_AppendArray(vec, arr, sizeof arr);
 
-    for(new i = 0; i < 6; i++) {
-        if(Vec_GetValue(vec, i) != arrReversed[i]) {
-            pass = false;
-        }
-    }
-    ASSERT(pass);
-
-    Vec_Reverse(vec, 2, 4);
-
-    for(new i = 0; i < 6; i++) {
-        if(Vec_GetValue(vec, i) != arrReversed2[i]) {
-            pass = false;
-        }
-    }
-
-    ASSERT(pass);
-
-    Vec_Delete(vec);
+	ASSERT_EQ(Vec_Len(vec), 5);
+	for(new i = 0; i < 5; ++i)
+	{
+		ASSERT_EQ(Vec_Get(vec, i), expected[i]);
+	}
 }
 
-Test:CopyTo() {
-    new
-        arr[] = {1, 2, 3, 4, 5, 6},
-        dest[6],
-        Vec:vec = Vec_NewFromArray(arr, sizeof arr),
-        bool:pass = true;
+Test:NewFromArray()
+{
+	new arr[] = {1, 2, 3, 4, 5};
 
-    Vec_CopyTo(vec, dest);
+	new Vec:vec = Vec_NewFromArray(10, arr);
 
-    for(new i = 0; i < 6; i++) {
-        if(dest[i] != arr[i]) {
-            pass = false;
-        }
-    }
-    ASSERT(pass);
-
-    Vec_Delete(vec);
+	ASSERT_EQ(Vec_Len(vec), 5);
+	for(new i = 0; i < 5; ++i)
+	{
+		ASSERT_EQ(Vec_Get(vec, i), arr[i]);
+	}
 }
 
-Test:AppendVector() {
-    new
-        arr[] = {1, 2},
-        toAppend[] = {1, 2, 3, 4, 5, 6},
-        result[] = {1, 2, 3, 4, 5},
-        Vec:vec = Vec_NewFromArray(arr, sizeof arr),
-        Vec:vec2 = Vec_NewFromArray(toAppend, sizeof toAppend),
-        bool:pass = true;
+Test:SetArray()
+{
+	new
+		startingArr[] = {1, 2, 3, 4, 5},
+		toSet[] = {6, 7, 8},
+		expected[] = {1, 6, 7, 8, 5},
+		Vec:vec = Vec_NewFromArray(10, startingArr);
 
-    Vec_AppendVector(vec, vec2, 2, 4);
+	Vec_SetArray(vec, toSet, 1);
 
-    for(new i = 0; i < 5; i++) {
-        if(Vec_GetValue(vec, i) != result[i]) {
-            pass = false;
-        }
-    }
-
-    ASSERT(pass && Vec_GetLength(vec) == 5);
-    Vec_Delete(vec);
+	ASSERT_EQ(Vec_Len(vec), 5);
+	for(new i = 0; i < 5; ++i)
+	{
+		ASSERT_EQ(Vec_Get(vec, i), expected[i]);
+	}
 }
 
-Test:Remove() {
-    new
-        arr[] = {1, 2, 3, 4 ,3, 6},
-        result[] = {1, 2, 6, 4, 3},
-        bool:pass = true,
-        Vec:vec = Vec_NewFromArray(arr, sizeof arr);
+Test:SetArrayPastLength()
+{
+	new
+		startingArr[] = {1, 2, 3, 4, 5},
+		toSet[] = {6, 7, 8},
+		expected[] = {1, 2, 3, 6, 7, 8},
+		Vec:vec = Vec_NewFromArray(10, startingArr);
 
-    Vec_RemoveElement(vec, 3);
+	Vec_SetArray(vec, toSet, 3);
 
-    for(new i = 0; i < 5; i++) {
-        if(Vec_GetValue(vec, i) != result[i]) {
-            pass = false;
-        }
-    }
-
-    ASSERT(pass);
-
-    Vec_Delete(vec);
+	ASSERT_EQ(Vec_Len(vec), 6);
+	for(new i = 0; i < 6; ++i)
+	{
+		ASSERT_EQ(Vec_Get(vec, i), expected[i]);
+	}
 }
 
-Test:RemoveOrdered() {
-    new
-        arr[] = {1, 2, 3, 4, 3, 6},
-        result[] = {1, 2, 4 ,3, 6},
-        bool:pass = true,
-        Vec:vec = Vec_NewFromArray(arr, 6);
+Test:AppendVector()
+{
+	new
+		arr[] = {1, 2},
+		toAppendArr[] = {1, 2, 3, 4, 5, 6, 7},
+		Vec:vec = Vec_NewFromArray(10, arr),
+		Vec:toAppend = Vec_NewFromArray(10, toAppendArr);
 
-    Vec_ToggleOrdered(vec, true);
+	Vec_AppendVector(vec, toAppend, 2, 5);
 
-    Vec_RemoveElement(vec, 3);
-
-    for(new i = 0; i < 5; i++) {
-        if(Vec_GetValue(vec, i) != result[i]) {
-            pass = false;
-        }
-    }
-
-    ASSERT(pass);
-
-    Vec_Delete(vec);
+	ASSERT_EQ(Vec_Len(vec), 5);
+	for(new i = 0; i < 5; ++i)
+	{
+		ASSERT_EQ(Vec_Get(vec, i), i + 1);
+	}
 }
 
-Test:Clone() {
-    new
-        arr[] = {1, 2, 3, 4, 5, 6},
-        bool:pass = true,
-        Vec:vec = Vec_NewFromArray(arr, 7, 10);
+Test:Swap()
+{
+	new
+		arr[] = {1, 2, 3, 4, 5},
+		Vec:vec = Vec_NewFromArray(10, arr),
+		expected[] = {1, 4, 3, 2, 5};
 
-    Vec_ToggleOrdered(vec, true);
-    Vec_ToggleFixedSize(vec, true);
+	Vec_Swap(vec, 1, 3);
 
-    new Vec:vec2 = Vec_Clone(vec);
-
-    for(new i = 0; i < 6; i++) {
-        if(Vec_GetValue(vec, i) != Vec_GetValue(vec2, i)) {
-            pass = false;
-        }
-    }
-
-    ASSERT(pass);
-    ASSERT(Vec_IsOrdered(vec2));
-    ASSERT(Vec_IsFixedSize(vec2));
-
-    ASSERT(Vec_GetIncrease(vec) == Vec_GetIncrease(vec2));
-
-    Vec_Delete(vec);
-    Vec_Delete(vec2);
+	for(new i = 0; i < 5; ++i)
+	{
+		ASSERT_EQ(Vec_Get(vec, i), expected[i]);
+	}
 }
 
-Test:FindAll() {
-    new
-        arr[] = {7, 5, 6, 4, 2, 4, 1, 3, 4, 9, 4},
-        exptectedIndexes[] = {3, 5, 8, 10},
-        bool:pass = true,
-        Vec:vec = Vec_NewFromArray(arr);
+Test:Reverse()
+{
+	new
+		arr[] = {1, 2, 3, 4, 5, 6, 7},
+		Vec:vec = Vec_NewFromArray(10, arr),
+		expected[] = {1, 6, 5, 4, 3, 2, 7};
 
-    new Vec:indexVec = Vec_FindAllElements(vec, 4);
+	Vec_Reverse(vec, 1, 5);
 
-    ASSERT(Vec_GetLength(indexVec) == 4);
-
-    for(new i = 0; i < 4; i++) {
-        if(Vec_GetValue(indexVec, i) != exptectedIndexes[i]) {
-            pass = false;
-        }
-    }
-    ASSERT(pass);
-
-    Vec_Delete(indexVec);
-
-    indexVec = Vec_FindAllElements(vec, 15);
-
-    ASSERT(indexVec == INVALID_VECTOR_ID);
-
-    Vec_Delete(vec);
-    Vec_Delete(indexVec);
+	for(new i = 0; i < 7; ++i)
+	{
+		ASSERT_EQ(Vec_Get(vec, i), expected[i]);
+	}
 }
 
-Test:find() {
-    new
-        arr[] = {1, 2, 3, 4, 5, 6},
-        Vec:vec = Vec_NewFromArray(arr),
-        index;
+Test:CopyTo()
+{
+	new
+		arr[] = {1, 2, 3, 4, 5},
+		Vec:vec = Vec_NewFromArray(10, arr),
+		dest[5];
 
-    ASSERT(Vec_FindElement(vec, 3, index));
-    ASSERT(index == 2);
+	Vec_CopyTo(vec, dest, 1, 4);
 
-    ASSERT(!Vec_FindElement(vec, 7, index));
-    ASSERT(index == -1);
-
-    Vec_Delete(vec);
+	for(new i = 0; i < 3; ++i)
+	{
+		ASSERT_EQ(dest[i], i + 2);
+	}
 }
 
-Test:RemoveLast() {
-    new
-        arr[] = {9, 8, 3, 8, 4, 6 ,8 ,1 ,6},
-        Vec:vec = Vec_NewFromArray(arr),
-        res[] =  {9, 8, 3, 8, 4, 6, 6, 1},
-        bool:pass = true;
+Test:ForEach()
+{
+	new
+		arr[] = {1, 2, 3, 4, 5},
+		Vec:vec = Vec_NewFromArray(10, arr),
+		i = 0;
 
-    Vec_RemoveLastElement(vec, 8);
-
-    for(new i = 0; i < 8; i++) {
-        if(Vec_GetValue(vec, i) != res[i]) {
-            pass = false;
-        }
-    }
-
-    ASSERT(pass);
-
-    Vec_Delete(vec);
+	VEC_FOREACH(new value : vec)
+	{
+		ASSERT_EQ(Vec_Get(vec, i), value);
+		i++;
+	}
 }
 
-Test:FindLast() {
-    new
-        arr[] = {9, 8, 3, 8, 4, 6 ,8 ,1 ,6},
-        Vec:vec = Vec_NewFromArray(arr),
-        index;
+Test:ForEach_Range()
+{
+	new
+		arr[] = {1, 2, 3, 4, 5, 6, 7, 8},
+		Vec:vec = Vec_NewFromArray(10, arr),
+		i = 2;
 
-    new bool:ret = Vec_FindLastElement(vec, 8, index);
-    ASSERT(ret && index == 6);
-
-    ret = Vec_FindLastElement(vec, 15, index);
-    ASSERT(!ret && index == -1);
-
-    Vec_Delete(vec);
+	VEC_FOREACH(new value : vec[2..6])
+	{
+		ASSERT_EQ(Vec_Get(vec, i), value);
+		i++;
+	}
 }
 
-Test:RemoveAll() {
-    new
-        arr[] = {9, 8, 3, 8, 4, 6 ,8 ,1 ,6},
-        Vec:vec = Vec_NewFromArray(arr),
-        res[] =  {9, 6, 3, 1, 4, 6},
-        bool:pass = true;
+Test:String()
+{
+	new Vec:vec = Vec_NewString("Hello, ");
+	Vec_AppendString(vec, "worl");
+	Vec_AppendChar(vec, 'd');
 
-    Vec_RemoveAllElements(vec, 8);
-
-    for(new i = 0; i < 6; i++) {
-        if(Vec_GetValue(vec, i) != res[i]) {
-            pass = false;
-        }
-    }
-
-    ASSERT(pass);
-    Vec_Delete(vec);
+	ASSERT_SAME(Vec_GetAsArray(vec,0), "Hello, world");
+	ASSERT_EQ(Vec_Len(vec), 12);
 }
 
-Test:Swap() {
-    new
-        arr[] = {1, 2, 3, 4, 5, 6},
-        res[] = {1, 5, 3, 4, 2, 6},
-        Vec:vec = Vec_NewFromArray(arr),
-        bool:pass = true;
+Test:RemoveFirstBy()
+{
+	new
+		Vec:vec = Vec_NewFromArray(10, {1, 2, 3, 4, 5}),
+		expected[] = {1, 5, 3, 4};
 
-    Vec_Swap(vec, 1, 4);
+	inline isEven(val)
+	{
+		inline_return val % 2 == 0;
+	}
+	Vec_RemoveFirstBy(vec, using inline isEven);
 
-    for(new i = 0; i < Vec_GetLength(vec); i++) {
-        if(Vec_GetValue(vec, i) != res[i]) {
-            pass = false;
-        }
-    }
-
-    ASSERT(pass);
-
-    Vec_Delete(vec);
+	for(new i = 0; i < 4; ++i)
+		ASSERT_EQ(Vec_Get(vec, i), expected[i]);
 }
 
-Test:SortDef() {
-    new
-        arr[] = {16, 61, 64, 91, 23, 97, 51, 70, 90, 80},
-        res[] = {16, 23, 51, 61, 64, 70, 80, 90, 91, 97},
-        Vec:vec = Vec_NewFromArray(arr),
-        bool:pass = true;
+Test:RemoveLastBy()
+{
+	new
+		Vec:vec = Vec_NewFromArray(10, {1, 2, 3, 4, 5}),
+		expected[] = {1, 2, 3, 5};
 
-    Vec_Sort(vec);
+	inline isEven(val)
+	{
+		inline_return val % 2 == 0;
+	}
+	Vec_RemoveLastBy(vec, using inline isEven);
 
-    for(new i = 0; i < Vec_GetLength(vec); i++) {
-        if(Vec_GetValue(vec, i) != res[i]) {
-            pass = false;
-        }
-    }
-
-    ASSERT(pass);
+	for(new i = 0; i < 4; ++i)
+		ASSERT_EQ(Vec_Get(vec, i), expected[i]);
 }
 
-Test:sort() {
-    new
-        arr[] = {16, 61, 64, 91, 23, 97, 51, 70, 90, 80},
-        res[] = {97, 91, 90, 80, 70, 64, 61, 51, 23, 16},
-        Vec:vec = Vec_NewFromArray(arr),
-        bool:pass = true;
+Test:RemoveLastElement()
+{
+	new
+		Vec:vec = Vec_NewFromArray(10, {1, 3, 3, 2, 5}),
+		expected[] = {1, 3, 5, 2};
 
-    inline compare(value1, value2) {
-        inline_return value1 >= value2 ? true : false;
-    }
+	Vec_RemoveLastElement(vec, 3);
 
-    Vec_SortBy(vec, using inline compare);
-
-    for(new i = 0; i < Vec_GetLength(vec); i++) {
-        if(Vec_GetValue(vec, i) != res[i]) {
-            pass = false;
-        }
-    }
-
-    ASSERT(pass);
+	for(new i = 0; i < 4; ++i)
+		ASSERT_EQ(Vec_Get(vec, i), expected[i]);
 }
 
-Test:Strings() {
-    new Vec:string = Vec_NewString("hello");
-    Vec_AppendString(string, ", world!");
+Test:RemoveAllBy()
+{
+	new
+		Vec:vec = Vec_NewFromArray(10, {1, 2, 3, 4, 5}),
+		expected[] = {1, 5, 3};
 
-    new bool:pass;
-    if(!strcmp("hello, world!", Vec_GetString(string, 0))) {
-        pass = true;
-    }
-    ASSERT(pass);
+	inline isEven(val)
+	{
+		inline_return val % 2 == 0;
+	}
+	Vec_RemoveAllBy(vec, using inline isEven);
 
-    Vec_ChangeString(string, "hola");
-    Vec_AppendChar(string, ',');
-    Vec_AppendString(string, " mundo");
-    Vec_AppendChar(string, '!');
-
-    pass = false;
-    if(!strcmp("hola, mundo!", Vec_GetString(string, 0))) {
-        pass = true;
-    }
-    ASSERT(pass && Vec_GetLength(string) == 12);
-
-    Vec_Delete(string);
+	for(new i = 0; i < 3; ++i)
+		ASSERT_EQ(Vec_Get(vec, i), expected[i]);
 }
 
-Test:TrueForAll() {
-    new Vec:vec = Vec_NewFromArray({5, 10, 15, 20});
-    new Vec:vec2 = Vec_NewFromArray({5, 10, 15, 3});
-    inline isMultipleOf5(value) {
-        inline_return value % 5 == 0 ? true : false;
-    }
+Test:RemoveAllElements()
+{
+	new
+		Vec:vec = Vec_NewFromArray(10, {1, 2, 2, 4, 5}),
+		expected[] = {1, 5, 4};
 
-    ASSERT(Vec_TrueForAll(vec, using inline isMultipleOf5));
-    ASSERT(!Vec_TrueForAll(vec2, using inline isMultipleOf5));
+	Vec_RemoveAllElements(vec, 2);
 
-    Vec_Delete(vec);
-    Vec_Delete(vec2);
+	for(new i = 0; i < 3; ++i)
+		ASSERT_EQ(Vec_Get(vec, i), expected[i]);
 }
 
-Test:BinarySearch() {
-    new Vec:vec = Vec_NewFromArray({16, 24, 30, 31, 66, 71, 77, 87, 97, 100});
-    ASSERT(Vec_BinarySearchElement(vec, 30) == 2);
-    ASSERT(Vec_BinarySearchElement(vec, 16) == 0);
-    ASSERT(Vec_BinarySearchElement(vec, 77) == 6);
-    ASSERT(Vec_BinarySearchElement(vec, 29) == -1);
-    Vec_Delete(vec);
+Test:ContainsBy()
+{
+	new
+		Vec:vec = Vec_NewFromArray(10, {1, 2, 2, 4, 5});
+	inline isEven(val)
+		inline_return val % 2 == 0;
+	inline isOdd(val)
+		inline_return val % 2 != 0;
+	inline isMultipleOf8(val)
+		inline_return val % 8 == 0;
+
+	ASSERT(Vec_ContainsBy(vec, using inline isEven));
+	ASSERT(Vec_ContainsBy(vec, using inline isOdd));
+	ASSERT_FALSE(Vec_ContainsBy(vec, using inline isMultipleOf8));
+}
+
+Test:FindFirstBy()
+{
+	new Vec:vec = Vec_NewFromArray(10, {1, 2, 2, 3, 4});
+	inline isEven(val)
+		inline_return val % 2 == 0;
+	inline isMultipleOf8(val)
+		inline_return val % 8 == 0;
+
+	ASSERT_EQ(Vec_FindFirstBy(vec, using inline isEven), 1);
+	ASSERT_EQ(Vec_FindFirstBy(vec, using inline isMultipleOf8), -1);
+}
+
+Test:FindLastBy()
+{
+	new Vec:vec = Vec_NewFromArray(10, {1, 2, 2, 3, 4});
+	inline isOdd(val)
+		inline_return val % 2 != 0;
+	inline isMultipleOf8(val)
+		inline_return val % 8 == 0;
+
+	ASSERT_EQ(Vec_FindLastBy(vec, using inline isOdd), 3);
+	ASSERT_EQ(Vec_FindLastBy(vec, using inline isMultipleOf8), -1);
+}
+
+Test:FindLastElement()
+{
+	new Vec:vec = Vec_NewFromArray(10, {1, 2, 2, 3, 4});
+
+	ASSERT_EQ(Vec_FindLastElement(vec, 2), 2);
+	ASSERT_EQ(Vec_FindLastElement(vec, 3), 3);
+	ASSERT_EQ(Vec_FindLastElement(vec, 5), -1);
+}
+
+Test:FindAllby()
+{
+	new
+		Vec:vec = Vec_NewFromArray(10, {1, 2, 3, 4, 5, 6, 7, 8}),
+		expected1[] = {1, 3, 5, 7},
+		expected2[] = {0, 2, 4, 6};
+	inline isEven(val)
+		inline_return val % 2 == 0;
+	inline isOdd(val)
+		inline_return val % 2 != 0;
+
+	new
+		Vec:found1 = Vec_FindAllBy(vec, using inline isEven),
+		Vec:found2 = Vec_FindAllBy(vec, using inline isOdd);
+
+	for(new i = 0; i < 4; ++i)
+		ASSERT_EQ(Vec_Get(found1, i), expected1[i]);
+	for(new i = 0; i < 4; ++i)
+		ASSERT_EQ(Vec_Get(found2, i), expected2[i]);
+}
+
+Test:FindAllElements()
+{
+	new
+		Vec:vec = Vec_NewFromArray(10, {1, 2, 1, 2, 1, 2, 1, 2}),
+		expected1[] = {1, 3, 5, 7},
+		expected2[] = {0, 2, 4, 6};
+
+	new
+		Vec:found1 = Vec_FindAllElements(vec, 2),
+		Vec:found2 = Vec_FindAllElements(vec, 1);
+
+	for(new i = 0; i < 4; ++i)
+		ASSERT_EQ(Vec_Get(found1, i), expected1[i]);
+	for(new i = 0; i < 4; ++i)
+		ASSERT_EQ(Vec_Get(found2, i), expected2[i]);
+}
+
+Test:TrueForAll()
+{
+	new Vec:vec = Vec_NewFromArray(10, {2, 4, 6 ,8, 10});
+
+	inline isEven(val)
+		inline_return val % 2 == 0;
+
+	ASSERT(Vec_TrueForAll(vec, using inline isEven));
+	Vec_Append(vec, 1);
+	ASSERT_FALSE(Vec_TrueForAll(vec, using inline isEven));
+}
+
+Test:BinarySearch()
+{
+	new Vec:vec = Vec_NewFromArray(10, {1, 2, 3, 4, 5, 6, 7, 8});
+
+	ASSERT_EQ(Vec_BinarySearch(vec, 3), 2);
+	ASSERT_EQ(Vec_BinarySearch(vec, 7), 6);
+	ASSERT_EQ(Vec_BinarySearch(vec, 8), 7);
+	ASSERT_EQ(Vec_BinarySearch(vec, 9), -1);
+}
+
+Test:Sort()
+{
+	new
+		Vec:vec = Vec_NewFromArray(10, {7, 4, 5, 3, 1, 8, 2, 6}),
+		sorted[] = {1, 2, 3, 4, 5, 6, 7, 8};
+
+	Vec_Sort(vec);
+
+	for(new i = 0; i < 8; ++i)
+		ASSERT(Vec_Get(vec, i) == sorted[i]);
 }

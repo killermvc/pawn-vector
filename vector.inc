@@ -1,915 +1,552 @@
-#if defined _inc_vector
-    #undef _inc_vector
-#endif
-
 #if defined _vector_included
     #endinput
 #endif
-
 #define _vector_included
 
-#include <YSI_Coding\y_malloc>
+#include <a_samp>
 #include <YSI_Coding\y_inline>
+#include <YSI_Coding\y_malloc>
 
-#if !defined VEC_DEFAULT_CAPACITY
-    #define VEC_DEFAULT_CAPACITY    (32)
-#endif
+#define VEC_DEFAULT_GROWTH		(16)
 
-
-#if !defined VEC_DEFAULT_INCREASE
-    #define VEC_DEFAULT_INCREASE    (6)
-#endif
-
-/*
-    internal
-*/
-
-enum _:e_VEC_ERRORS
+enum e_VEC_DATA()
 {
-    VEC_OK = 0,
-    VEC_NOALLOC,
-    VEC_INVALID,
-    VEC_NOT_FOUND,
-    VEC_NOP
+	e_VEC_DATA_LEN,
+	e_VEC_DATA_GROWTH,
+	e_VEC_DATA_IS_ORDERED,
+	e_VEC_DATA_IS_READ_ONLY
 }
 
-#define INVALID_VECTOR_ID           (Vec:-1)
-
-static Alloc:Vec_increase;
-static Alloc:Vec_vectorSlot;
-
-enum _:e_ATTRIBUTES
+enum E_VEC_ERROR()
 {
-    e_ATTRIBUTES_ORDERED = 1,
-    e_ATTRIBUTES_FIXED_SIZE = 2,
-    e_ATTRIBUTES_READ_ONLY = 4
+	E_VEC_ERROR_OK,
+	E_VEC_ERROR_NO_ALLOC,
+	E_VEC_ERROR_READ_ONLY,
+	E_VEC_ERROR_NOT_FOUND,
+	E_VEC_ERROR_INVALID_INDEX
 }
 
-//first 29 bits are for the len of the vectors, last 3 bits are for attributes
-//see above enum
-static Alloc:Vec_Attributes;
+#define Vec_GetAsArray(%0,%1)			Malloc_GetData(Alloc:%0,(%1)+_:e_VEC_DATA)
+#define Vec_GetString(%0)				Malloc_GetData(Alloc:%0,_:e_VEC_DATA)
 
-//highest id assigned
-static  Vec:Vec_LastID;
+#define VEC_FOREACH(%9new%0:%1)			for(new i__=_:VEC_FOREACH_R:VEC_FOREACH_N:(%0,%1)
 
-//array with ids that were in use and then released
-static  Alloc:Vec_releasedIDs;
+#define VEC_FOREACH_R:VEC_FOREACH_N:(%0,%1[%2..%3]%4)							\
+	%2,len__=%3,%0=Vec_Get(%1,%2);i__<len__;++i__,%0=Vec_Get(%1,i__))
 
-//index of the last released id
-static  Vec_lastReleasedID;
+#define VEC_FOREACH_N:(%0,%1)													\
+	0,len__=Vec_Len(%1),%0=Vec_Get(%1,0);i__<len__;++i__,%0=Vec_Get(%1,i__))
 
+#define INVALID_VECTOR			(Vec:NO_ALLOC)
 
-static stock Vec_SetLen(Vec:vec, newLen) {
-    mset(Vec_Attributes, _:vec, (newLen << 3) | (((1 << 3)-1) & mget(Vec_Attributes, _:vec)));
+stock Vec:Vec_New(capacity, bool:isOrdered = false, growth = VEC_DEFAULT_GROWTH)
+{
+	new Alloc:newVec = calloc(capacity + _:e_VEC_DATA);
+	if(newVec == NO_ALLOC)
+		return INVALID_VECTOR;
+	Malloc_Set(newVec, e_VEC_DATA_GROWTH, growth);
+	Malloc_Set(newVec, e_VEC_DATA_IS_ORDERED, _:isOrdered);
+	return Vec:newVec;
 }
 
-static stock Alloc:Vec_internalResize(Alloc:slot, newSize, length) {
-    new Alloc:newArr = calloc(newSize);
-    if(newArr != NO_ALLOC) {
-        Malloc_SetA(newArr, 0, mget(slot, 0), length);
-        Malloc_Free(slot);
-    }
-    return newArr;
+stock Vec:Vec_NewFromArray(capacity, const arr[], size = sizeof arr, bool:isOrdered = false, growth = VEC_DEFAULT_GROWTH)
+{
+	new Vec:vector = Vec_New(capacity >= size ? capacity : size, isOrdered, growth);
+	if(vector == INVALID_VECTOR)
+		return INVALID_VECTOR;
+	memcpy(Vec_GetAsArray(vector, 0), arr, 0, size * 4, size);
+	Vec_SetLen(vector, size);
+	return vector;
 }
 
-static stock Alloc:Vec_internalAppend(Alloc:slot, value, &length, increase = VEC_DEFAULT_INCREASE, bool:isFixed = false) {
-    if(length < Malloc_SlotSize(slot)) {
-        mset(slot, length, value);
-        length++;
-        return slot;
-    }
-    if(isFixed) {
-        return NO_ALLOC;
-    }
-    new Alloc:newArr = Vec_internalResize(slot, Malloc_SlotSize(slot) + increase, Malloc_SlotSize(slot));
-    if(newArr != NO_ALLOC) {
-        mset(newArr, length, value);
-        length++;
-    }
-    //will return the new Alloc slot if Vec_internalResize succeeded or NO_ALLOC otherwise
-    return newArr;
+stock Vec:Vec_NewString(const str[], growth = VEC_DEFAULT_GROWTH)
+{
+	new len = strlen(str);
+	new Vec:string = Vec_NewFromArray(len + growth, str, len, true, growth);
+	if(string == INVALID_VECTOR)
+		return INVALID_VECTOR;
+	//Make sure the null terminator is deleted next time we append.
+	Vec_SetLen(string, len);
+	return string;
 }
 
-static stock Alloc:Vec_internalAppendArray(Alloc:slot, const arr[], arrSize, &length, increase = VEC_DEFAULT_INCREASE, bool:isFixed) {
-    if(length+arrSize <= Malloc_SlotSize(slot)) {
-        Malloc_SetA(slot, length, arr, arrSize);
-        length += arrSize;
-        return slot;
-    }
-    if(isFixed) {
-        return NO_ALLOC;
-    }
-    new Alloc:newArr = Vec_internalResize(slot, length + arrSize + increase, Malloc_SlotSize(slot));
-    if(newArr != NO_ALLOC) {
-        Malloc_SetA(newArr, length, arr, arrSize);
-        length += arrSize;
-    }
-    return newArr;
+stock Vec_Len(Vec:vector)
+{
+	return Malloc_Get(Alloc:vector, e_VEC_DATA_LEN);
 }
 
-static stock Vec_internalRemove(Alloc:slot, index, bool:ordered, &length) {
-    if(index > length) {
-        return VEC_NOP;
-    }
-    if(!ordered) {
-        //swap last value with the removed one
-        mset(slot, index, mget(slot, length-1));
-        length--;
-        mset(slot, length, 0);
-        return VEC_OK;
-    }
-    //move the entire array past the removed index one index down
-    Malloc_SetA(slot, index, mget(slot, index+1), length-index);
-    length--;
-    return VEC_OK;
+stock bool:Vec_IsOrdered(Vec:vector)
+{
+	return bool:Malloc_Get(Alloc:vector, e_VEC_DATA_IS_ORDERED);
 }
 
-static stock Vec:Vec_getNewId() {
-    if(Vec_lastReleasedID > 0) {
-        //if there are released ids return one of them
-        new id = mget(Vec_releasedIDs, Vec_lastReleasedID-1);
-        Vec_lastReleasedID--;
-        return Vec:id;
-    }
-    //else return a new id
-    Vec_LastID++;
-    return Vec_LastID-Vec:1;
+stock Vec_SetOrdered(Vec:vector, bool:set)
+{
+	Malloc_Set(Alloc:vector, e_VEC_DATA_IS_ORDERED, _:set);
 }
 
-stock bool:Vec_IsValid(Vec:vec) {
-    if(vec >= Vec_LastID || vec == INVALID_VECTOR_ID) {
-        return false;
-    }
-    for(new i = 0; i < _:Vec_lastReleasedID; i++) {
-        if(mget(Vec_releasedIDs, i) == _:vec) {
-            //if the id is released return false
-            return false;
-        }
-    }
-    //otherwise return true
-    return true;
+stock bool:Vec_IsReadOnly(Vec:vector)
+{
+	return bool:Malloc_Get(Alloc:vector, e_VEC_DATA_IS_READ_ONLY);
 }
 
-static stock Vec_ReleaseId(Vec:id) {
-    if(!Vec_IsValid(id)) {
-        return VEC_INVALID;
-    }
-    if(id == Vec_LastID-Vec:1) {
-        Vec_LastID--;
-        return VEC_OK;
-    }
-    new Alloc:ret = Vec_internalAppend(Vec_releasedIDs, _:id, Vec_lastReleasedID);
-    Vec_releasedIDs = ret;
-    if(ret == NO_ALLOC) {
-        P:F("PAWN-VECTOR couldn't allocate memory for released id's");
-        return VEC_NOALLOC;
-    }
-    return VEC_OK;
+stock Vec_SetReadOnly(Vec:vector, bool:set)
+{
+	Malloc_Set(Alloc:vector, e_VEC_DATA_IS_READ_ONLY, _:set);
 }
 
-static stock Vec_resizeVectorsData(id, length) {
-    new Alloc:ret = Vec_internalResize(Vec_Attributes, id + VEC_DEFAULT_INCREASE, length);
-    if(ret == NO_ALLOC) {
-        P:F("PAWN-VECTOR couldn't allocate more memory for the vector's length");
-        return VEC_NOALLOC;
-    }
-    Vec_Attributes = ret;
-
-    ret = Vec_internalResize(Vec_vectorSlot, id + VEC_DEFAULT_INCREASE, length);
-    if(ret == NO_ALLOC) {
-        P:F("PAWN-VECTOR couldn't allocate more memory for vectors");
-        return VEC_NOALLOC;
-    }
-    Vec_vectorSlot = ret;
-
-    ret = Vec_internalResize(Vec_increase, id + VEC_DEFAULT_INCREASE, length);
-    if(ret == NO_ALLOC) {
-        P:F("PAWN-VECTOR couldn't allocate more memory for vectors' increase");
-        return VEC_NOALLOC;
-    }
-    Vec_increase = ret;
-    return VEC_OK;
+stock Vec_Growth(Vec:vector)
+{
+	return Malloc_Get(Alloc:vector, e_VEC_DATA_GROWTH);
 }
 
-stock Alloc:Vec_GetVecAllocSlot(Vec:vec) {
-    return Alloc:mget(Vec_vectorSlot, _:vec);
+stock E_VEC_ERROR:Vec_ReSize(& Vec:vector, newSize)
+{
+	new Alloc:newVector = realloc(Alloc:vector, newSize, true);
+	if(newVector == NO_ALLOC)
+		return E_VEC_ERROR_NO_ALLOC;
+
+	vector = Vec:newVector;
+	return E_VEC_ERROR_OK;
 }
 
-static stock Vec_QSPartition(Vec:unsorted, Func:Compare<ii>, start, end) {
-    new pivot = Vec_GetValue(unsorted, end);
-    new i = start -1;
+stock Vec_Capacity(Vec:vector)
+{
+	return Malloc_GetSlotSize(Alloc:vector) - _:e_VEC_DATA;
+}
+
+static stock Vec_SetLen(Vec:vector, len)
+{
+	Malloc_Set(Alloc:vector, e_VEC_DATA_LEN, len);
+}
+
+stock E_VEC_ERROR:Vec_Append(&Vec:vector, value)
+{
+	if(Vec_IsReadOnly(vector))
+		return E_VEC_ERROR_READ_ONLY;
+	new size =  Vec_Capacity(vector);
+	if(size <= Vec_Len(vector))
+	{
+		if(Vec_ReSize(vector, size + Vec_Growth(vector)) != E_VEC_ERROR_OK)
+			return E_VEC_ERROR_NO_ALLOC;
+	}
+	new len = Vec_Len(vector);
+	Malloc_Set(Alloc:vector,  len + _:e_VEC_DATA, value);
+	Malloc_Set(Alloc:vector, e_VEC_DATA_LEN, len + 1);
+	return E_VEC_ERROR_OK;
+}
+
+stock E_VEC_ERROR:Vec_AppendChar(&Vec:vector, value)
+{
+	new E_VEC_ERROR:err = Vec_Append(vector, value);
+	if(err != E_VEC_ERROR_OK)
+		return err;
+	//make sure to add a null terminator
+	err = Vec_Append(vector, '\0');
+	if(err != E_VEC_ERROR_OK)
+		return err;
+	//make sure the null terminator gets deleted next time we append
+	Vec_SetLen(vector, Vec_Len(vector) - 1);
+	return E_VEC_ERROR_OK;
+}
+
+stock E_VEC_ERROR:Vec_Set(&Vec:vector, index, value)
+{
+	if(Vec_IsReadOnly(vector))
+		return E_VEC_ERROR_READ_ONLY;
+	if(index >= Vec_Capacity(vector))
+	{
+		if(Vec_ReSize(vector, index + Vec_Growth(vector)) != E_VEC_ERROR_OK)
+			return E_VEC_ERROR_NO_ALLOC;
+	}
+
+	Malloc_Set(Alloc:vector, _:e_VEC_DATA + index, value);
+	if(index >= Vec_Len(vector))
+		Malloc_Set(Alloc:vector, e_VEC_DATA_LEN, index+1);
+
+	return E_VEC_ERROR_OK;
+}
+
+stock E_VEC_ERROR:Vec_RemoveAt(Vec:vector, index)
+{
+	if(Vec_IsReadOnly(vector))
+		return E_VEC_ERROR_READ_ONLY;
+	new len = Vec_Len(vector);
+	if(!Vec_IsOrdered(vector))
+	{
+		Vec_Set(vector, index, Vec_Get(vector, len - 1));
+		Vec_Set(vector, len, 0);
+		Vec_SetLen(vector, len - 1);
+	}
+	else
+	{
+		for(new i = index; i < len - 1; ++i)
+		{
+			Vec_Set(vector, i, Vec_Get(vector, i+1));
+		}
+		Vec_Set(vector, len - 1, 0);
+		Vec_SetLen(vector, len - 1);
+	}
+
+	return E_VEC_ERROR_OK;
+}
+
+stock E_VEC_ERROR:Vec_RemoveFirstBy(Vec:vector, Func:predicate<i>)
+{
+	if(Vec_IsReadOnly(vector))
+		return E_VEC_ERROR_READ_ONLY;
+	for(new i = 0; i < Vec_Len(vector); ++i)
+	{
+		if(@.predicate(Vec_Get(vector, i)))
+		{
+			Vec_RemoveAt(vector, i);
+			return E_VEC_ERROR_OK;
+		}
+	}
+	return E_VEC_ERROR_NOT_FOUND;
+}
+
+stock E_VEC_ERROR:Vec_RemoveFirstElement(Vec:vector, value)
+{
+	inline matchValue(val)
+		inline_return val == value;
+	return Vec_RemoveFirstBy(vector, using inline matchValue);
+}
+
+stock E_VEC_ERROR:Vec_RemoveLastBy(Vec:vector, Func:predicate<i>)
+{
+	if(Vec_IsReadOnly(vector))
+		return E_VEC_ERROR_READ_ONLY;
+
+	for(new i = Vec_Len(vector) - 1; i >= 0; --i)
+	{
+		if(@.predicate(Vec_Get(vector, i)))
+		{
+			Vec_RemoveAt(vector, i);
+			return E_VEC_ERROR_OK;
+		}
+	}
+	return E_VEC_ERROR_NOT_FOUND;
+}
+
+stock E_VEC_ERROR:Vec_RemoveLastElement(Vec:vector, value)
+{
+	inline matchValue(val)
+		inline_return val == value;
+
+	return Vec_RemoveLastBy(vector, using inline matchValue);
+}
+
+stock E_VEC_ERROR:Vec_RemoveAllBy(Vec:vector, Func:predicate<i>)
+{
+	if(Vec_IsReadOnly(vector))
+		return E_VEC_ERROR_READ_ONLY;
+
+	new found = false;
+	for(new i = 0; i < Vec_Len(vector); ++i)
+	{
+		if(@.predicate(Vec_Get(vector, i)))
+		{
+			Vec_RemoveAt(vector, i);
+			found = true;
+		}
+	}
+	return found ? E_VEC_ERROR_OK : E_VEC_ERROR_NOT_FOUND;
+}
+
+stock E_VEC_ERROR:Vec_RemoveAllElements(Vec:vector, value)
+{
+	inline matchValue(val)
+		inline_return val == value;
+	return Vec_RemoveAllBy(vector, using inline matchValue);
+}
+
+stock Vec_Get(Vec:vector, index)
+{
+	if(index >= Vec_Len(vector))
+		return 0;
+
+	return Malloc_Get(Alloc:vector, _:e_VEC_DATA + index);
+}
+
+stock bool:Vec_ContainsBy(Vec:vector, Func:predicate<i>)
+{
+	for(new i = 0, len = Vec_Len(vector); i < len; ++i)
+	{
+		if(@.predicate(Vec_Get(vector, i)))
+			return true;
+	}
+	return false;
+}
+
+stock bool:Vec_Contains(Vec:vector, value)
+{
+	inline matchValue(val)
+		inline_return val == value;
+	return Vec_ContainsBy(vector, using inline matchValue);
+}
+
+stock E_VEC_ERROR:Vec_Clear(Vec:vector)
+{
+	if(Vec_IsReadOnly(vector))
+		return E_VEC_ERROR_READ_ONLY;
+	memset(Vec_GetAsArray(vector, 0), 0, Vec_Len(vector));
+	Vec_SetLen(vector, 0);
+	return E_VEC_ERROR_OK;
+}
+
+stock Vec_FindFirstBy(Vec:vector, Func:predicate<i>)
+{
+	for(new i = 0, len = Vec_Len(vector); i < len; ++i)
+	{
+		if(@.predicate(Vec_Get(vector, i)))
+			return i;
+	}
+	return -1;
+}
+
+stock Vec_FindFirst(Vec:vector, value)
+{
+	inline matchValue(val)
+		inline_return val == value;
+	return Vec_FindFirstBy(vector, using inline matchValue);
+}
+
+stock Vec_FindLastBy(Vec:vector, Func:predicate<i>)
+{
+	for(new i = Vec_Len(vector) - 1; i >= 0; --i)
+	{
+		if(@.predicate(Vec_Get(vector, i)))
+			return i;
+	}
+	return -1;
+}
+
+stock Vec_FindLastElement(Vec:vector, value)
+{
+	inline matchValue(val)
+		inline_return val == value;
+	return Vec_FindLastBy(vector, using inline matchValue);
+}
+
+stock Vec:Vec_FindAllBy(Vec:vector, Func:predicate<i>)
+{
+	new Vec:foundIndexes = Vec_New(10);
+	for(new i = 0, len = Vec_Len(vector); i < len; ++i)
+	{
+		if(@.predicate(Vec_Get(vector, i)))
+		{
+			Vec_Append(foundIndexes, i);
+		}
+	}
+	if(Vec_Len(foundIndexes) == 0)
+	{
+		Vec_Delete(foundIndexes);
+		foundIndexes = INVALID_VECTOR;
+	}
+	return foundIndexes;
+}
+
+stock Vec:Vec_FindAllElements(Vec:vector, value)
+{
+	inline matchValue(val)
+		inline_return val == value;
+	return Vec_FindAllBy(vector, using inline matchValue);
+}
+
+stock bool:Vec_TrueForAll(Vec:vector, Func:predicate<i>)
+{
+	VEC_FOREACH(new val : vector)
+	{
+		if(!@.predicate(val))
+			return false;
+	}
+	return true;
+}
+
+stock Vec_BinarySearchBy(Vec:vector, Func:predicate<i>)
+{
+	new first = 0, last = Vec_Len(vector) - 1, mid, check;
+
+	while(first < last)
+	{
+		if(!@.predicate(Vec_Get(vector, first)))
+			return first;
+		if(!@.predicate(Vec_Get(vector, last)))
+			return last;
+
+		mid = (first + last)/2;
+		check = @.predicate(Vec_Get(vector, mid));
+
+		if(!check)
+			return mid;
+		else if(check == -1)
+		{
+			first = mid+1;
+			--last;
+		}
+		else
+		{
+			last = mid-1;
+			++first;
+		}
+	}
+	return -1;
+}
+
+stock Vec_BinarySearch(Vec:vector, value)
+{
+	inline compareValues(val)
+	{
+		if(val == value)
+			inline_return 0;
+		else if(val < value)
+			inline_return -1;
+		else
+			inline_return 1;
+	}
+	return Vec_BinarySearchBy(vector, using inline compareValues);
+}
+
+stock E_VEC_ERROR:Vec_AppendArray(&Vec:vector, const arr[], size = sizeof arr)
+{
+	if(Vec_IsReadOnly(vector))
+		return E_VEC_ERROR_READ_ONLY;
+	new len = Vec_Len(vector);
+	new requiredSize = len + size;
+	if(requiredSize >= Vec_Capacity(vector))
+	{
+		if(Vec_ReSize(vector, requiredSize + Vec_Growth(vector)) != E_VEC_ERROR_OK)
+			return E_VEC_ERROR_NO_ALLOC;
+	}
+
+	memcpy(Vec_GetAsArray(vector, len), arr, 0, size * 4, size);
+	Vec_SetLen(vector, len + size);
+	return E_VEC_ERROR_OK;
+}
+
+stock E_VEC_ERROR:Vec_AppendString(&Vec:vector, const str[], len = -1)
+{
+	if(Vec_IsReadOnly(vector))
+		return E_VEC_ERROR_READ_ONLY;
+	if(len <= 0)
+		len = strlen(str);
+
+	//len + 1 so that it adds the null terminator
+	new E_VEC_ERROR:err = Vec_AppendArray(vector, str, len + 1);
+	if(err != E_VEC_ERROR_OK)
+		return err;
+	//make sure the null terminator is deleted next time we append
+	Vec_SetLen(vector, Vec_Len(vector) - 1);
+	return E_VEC_ERROR_OK;
+}
+
+stock E_VEC_ERROR:Vec_SetArray(&Vec:vector, const arr[], index ,size = sizeof arr)
+{
+	if(Vec_IsReadOnly(vector))
+		return E_VEC_ERROR_READ_ONLY;
+	new requiredSize = index + size;
+	if(requiredSize >= Vec_Capacity(vector))
+	{
+		if(Vec_ReSize(vector, requiredSize + Vec_Growth(vector)) != E_VEC_ERROR_OK)
+			return E_VEC_ERROR_NO_ALLOC;
+	}
+
+	memcpy(Vec_GetAsArray(vector, index), arr, 0, size * 4, size);
+	new len = Vec_Len(vector);
+	Vec_SetLen(vector, len >= requiredSize ? len : requiredSize);
+	return E_VEC_ERROR_OK;
+}
+
+stock E_VEC_ERROR:Vec_AppendVector(&Vec:vector, Vec:toAppend, start = 0, end = 0)
+{
+	if(Vec_IsReadOnly(vector))
+		return E_VEC_ERROR_READ_ONLY;
+	if(end <= 0 || end > Vec_Len(toAppend))
+		end = Vec_Len(toAppend);
+	return Vec_AppendArray(vector, Vec_GetAsArray(toAppend, start), end-start);
+}
+
+stock E_VEC_ERROR:Vec_Swap(Vec:vector, index1, index2)
+{
+	if(Vec_IsReadOnly(vector))
+		return E_VEC_ERROR_READ_ONLY;
+	new len = Vec_Len(vector);
+	if(index1 >= len || index2 >= len)
+		return E_VEC_ERROR_INVALID_INDEX;
+
+	new tmp = Vec_Get(vector, index1);
+	Vec_Set(vector, index1, Vec_Get(vector, index2));
+	Vec_Set(vector, index2, tmp);
+	return E_VEC_ERROR_OK;
+}
+
+stock E_VEC_ERROR:Vec_Reverse(Vec:vector, start = 0, end = 0)
+{
+	if(Vec_IsReadOnly(vector))
+		return E_VEC_ERROR_READ_ONLY;
+	new len = Vec_Len(vector);
+	if(end == 0 || end > len)
+		end = len - 1;
+	if(start > len)
+		return E_VEC_ERROR_INVALID_INDEX;
+	if(start == end)
+		return E_VEC_ERROR_INVALID_INDEX;
+
+	for(new i = start, j = end; i < j; ++i, --j)
+	{
+		Vec_Swap(vector, i, j);
+	}
+	return E_VEC_ERROR_OK;
+}
+
+stock Vec_CopyTo(Vec:vector, dest[], start = 0, end = 0, size = sizeof dest)
+{
+	if(end == 0 || end > size)
+		end = size;
+
+	memcpy(dest, Vec_GetAsArray(vector, start), 0, (end - start)*4, end);
+}
+
+static stock Vec_QSPartition(Vec:unsorted, Func:Comparer<ii>, start, end) {
+    new pivot = Vec_Get(unsorted, end);
+    new i = start - 1;
     for(new j = start; j <= end-1; j++) {
-        if(@.Compare(Vec_GetValue(unsorted, j), pivot)) {
+        if(@.Comparer(Vec_Get(unsorted, j), pivot)) {
             i++;
             Vec_Swap(unsorted, i, j);
         }
     }
     Vec_Swap(unsorted, i+1, end);
-
     return i+1;
 }
 
-#include <YSI_Coding\y_hooks>
-hook OnScriptInit() {
-    Vec_Attributes = calloc(20);
-    if(Vec_Attributes == NO_ALLOC) {
-        P:F("PAWN-VECTOR couldn't allocate memory for the vector's length");
-    }
-
-    Vec_vectorSlot = calloc(20);
-    if(Vec_vectorSlot == NO_ALLOC) {
-        P:F("PAWN-VECTOR couldn't allocate memory for vectors");
-    }
-    Vec_increase = calloc(20);
-    if(Vec_increase == NO_ALLOC) {
-        P:F("PAWN-VECTOR couldn't allocate memory for vectors' increase");
-    }
-    Vec_releasedIDs = calloc(20);
-    if(Vec_releasedIDs == NO_ALLOC) {
-        P:F("PAWN-VECTOR couldn't allocate memory for released ids");
-    }
-    return 1;
-}
-
-hook OnScriptExit() {
-    free(Vec_releasedIDs);
-    free(Vec_Attributes);
-    for(new i = 0; i < _:Vec_LastID; i++) {
-        free(Alloc:mget(Vec_vectorSlot, i));
-    }
-    free(Vec_vectorSlot);
-    return 1;
-}
-
-
-/*
-    api
-*/
-
-stock bool:Vec_IsFixedSize(Vec:vec) {
-    if(!Vec_IsValid(vec)) {
-        return false;
-    }
-    return bool:(mget(Vec_Attributes, _:vec) & e_ATTRIBUTES_FIXED_SIZE);
-}
-
-stock Vec_GetIncrease(Vec:vec) {
-    if(!Vec_IsValid(vec)) {
-        return VEC_INVALID;
-    }
-    return mget(Vec_increase, _:vec);
-}
-
-stock bool:Vec_IsReadOnly(Vec:vec) {
-    if(!Vec_IsValid(vec)) {
-        return false;
-    }
-    return bool:(mget(Vec_Attributes, _:vec) & e_ATTRIBUTES_READ_ONLY);
-}
-
-stock bool:Vec_IsOrdered(Vec:vec) {
-    if(!Vec_IsValid(vec)) {
-        return false;
-    }
-    return bool:(mget(Vec_Attributes, _:vec) & e_ATTRIBUTES_ORDERED);
-}
-
-stock Vec_ToggleOrdered(Vec:vec, bool:toggle) {
-    if(!Vec_IsValid(vec)) {
-        return VEC_INVALID;
-    }
-    if(Vec_IsOrdered(vec) == toggle) {
-        return VEC_OK;
-    }
-    mset(Vec_Attributes, _:vec, mget(Vec_Attributes, _:vec) ^ e_ATTRIBUTES_ORDERED);
-    return VEC_OK;
-}
-
-stock Vec_ToggleReadOnly(Vec:vec, bool:toggle) {
-    if(!Vec_IsValid(vec)) {
-        return VEC_INVALID;
-    }
-    if(Vec_IsReadOnly(vec) == toggle) {
-        return VEC_OK;
-    }
-    mset(Vec_Attributes, _:vec, mget(Vec_Attributes, _:vec) ^ e_ATTRIBUTES_READ_ONLY);
-    return VEC_OK;
-}
-
-stock Vec_ToggleFixedSize(Vec:vec, bool:toggle) {
-    if(!Vec_IsValid(vec)) {
-        return VEC_INVALID;
-    }
-    if(Vec_IsFixedSize(vec) == toggle) {
-        return VEC_OK;
-    }
-    mset(Vec_Attributes, _:vec, mget(Vec_Attributes, _:vec) ^ e_ATTRIBUTES_FIXED_SIZE);
-    return VEC_OK;
-}
-
-#define Vec_GetString(%0,%1)    mget(Vec_GetVecAllocSlot((%0)), _:(%1))
-
-stock Vec:Vec_New(capacity = VEC_DEFAULT_CAPACITY, sizeIncrease = VEC_DEFAULT_INCREASE) {
-    new Alloc:a = calloc(capacity);
-    new Vec:id = Vec_getNewId();
-    new length = Malloc_SlotSize(Vec_vectorSlot);
-    if(_:id >= length) {
-        if(Vec_resizeVectorsData(_:id, length) == VEC_NOALLOC) {
-            return INVALID_VECTOR_ID;
-        }
-    }
-    Vec_SetLen(id, 0);
-    mset(Vec_increase, id, sizeIncrease);
-    mset(Vec_vectorSlot, id, _:a);
-    Vec_ToggleOrdered(id, false);
-    Vec_ToggleFixedSize(id, false);
-    Vec_ToggleReadOnly(id, false);
-    return id;
-}
-
-stock Vec:Vec_NewFromArray(const arr[], capacity = VEC_DEFAULT_CAPACITY, sizeIncrease = VEC_DEFAULT_INCREASE, arrSize = sizeof arr) {
-    if(capacity < arrSize) {
-        capacity = arrSize + sizeIncrease;
-    }
-    new Alloc:a = calloc(capacity);
-    new Vec:id = Vec_getNewId();
-
-    new length = Malloc_SlotSize(Vec_vectorSlot);
-    if(_:id >= length) {
-        if(Vec_resizeVectorsData(_:id, length) == VEC_NOALLOC) {
-            return INVALID_VECTOR_ID;
-        }
-    }
-    length = 0;
-    a = Vec_internalAppendArray(a, arr, arrSize, length, sizeIncrease, false);
-    mset(Vec_vectorSlot, id, _:a);
-    mset(Vec_increase, id, sizeIncrease);
-    Vec_SetLen(id, length);
-    Vec_ToggleOrdered(id, false);
-    Vec_ToggleFixedSize(id, false);
-    Vec_ToggleReadOnly(id, false);
-    return id;
-}
-
-stock Vec:Vec_NewString(const str[], capacity = VEC_DEFAULT_CAPACITY, sizeIncrease = VEC_DEFAULT_INCREASE, size = sizeof str) {
-    new Vec:stringVec = Vec_NewFromArray(str, capacity, sizeIncrease, size);
-    if(stringVec != INVALID_VECTOR_ID) {
-        Vec_SetLen(stringVec, Vec_GetLength(stringVec)-1);
-    }
-    return stringVec;
-}
-
-stock Vec:Vec_Clone(Vec:vec, bool:readonly = false, start = 0, end = 0) {
-    new Vec:newVec = Vec_New(Vec_GetCapacity(vec), mget(Vec_increase, _:vec));
-    Vec_ToggleFixedSize(newVec, Vec_IsFixedSize(vec));
-    Vec_ToggleOrdered(newVec, Vec_IsOrdered(vec));
-    if(newVec == INVALID_VECTOR_ID) {
-        return INVALID_VECTOR_ID;
-    }
-
-    Vec_AppendVector(newVec, vec, start, end);
-
-    if(readonly) {
-        Vec_ToggleReadOnly(vec, true);
-    }
-    return newVec;
-
-}
-
-stock Vec_GetLength(Vec:vec) {
-    if(!Vec_IsValid(vec)) {
-        return VEC_INVALID;
-    }
-    return mget(Vec_Attributes, _:vec) >> 3;
-}
-
-stock Vec_GetCapacity(Vec:vec) {
-    if(!Vec_IsValid(vec)) {
-        return VEC_INVALID;
-    }
-    return Malloc_SlotSize(mget(Vec_vectorSlot, _:vec));
-}
-
-stock Vec_ChangeIncrease(Vec:vec, increase) {
-    if(!Vec_IsValid(vec)) {
-        return VEC_INVALID;
-    }
-    mset(Vec_increase, _:vec, increase);
-    return VEC_OK;
-}
-
-stock Vec_Resize(Vec:vec, newSize) {
-    if(!Vec_IsValid(vec)) {
-        return VEC_INVALID;
-    }
-    if(Vec_IsReadOnly(vec) || Vec_IsFixedSize(vec)) {
-        return VEC_NOP;
-    }
-
-    if(newSize < Vec_GetLength(vec)) {
-        return VEC_NOALLOC;
-    }
-
-    new Alloc:arr = Vec_internalResize(Vec_GetVecAllocSlot(vec), newSize,  Vec_GetLength(vec));
-    if(arr == NO_ALLOC) {
-        return VEC_NOALLOC;
-    }
-    //update the allocated data id for the vector
-    mset(Vec_vectorSlot, _:vec, _:arr);
-    return VEC_OK;
-}
-
-stock Vec_Append(Vec:vec, value) {
-    if(!Vec_IsValid(vec)) {
-        return VEC_INVALID;
-    }
-
-    if(Vec_IsReadOnly(vec)) {
-        return VEC_NOP;
-    }
-
-    new length = Vec_GetLength(vec);
-    new Alloc:arr = Vec_GetVecAllocSlot(vec);
-    arr = Vec_internalAppend(arr, value, length, mget(Vec_increase, _:vec), Vec_IsFixedSize(vec));
-    if(arr == NO_ALLOC) {
-        return VEC_NOALLOC;
-    }
-    //update the allocated data id
-    mset(Vec_vectorSlot, _:vec, _:arr);
-    //update the length of the vector
-    Vec_SetLen(vec, length);
-    return VEC_OK;
-}
-
-stock Vec_AppendChar(Vec:vec, ch) {
-    new ret = Vec_Append(vec, ch);
-    if(ret != VEC_OK) {
-        return ret;
-    }
-
-    ret = Vec_Append(vec, '\0');
-    if(ret != VEC_OK) {
-        return ret;
-    }
-
-    Vec_SetLen(vec, Vec_GetLength(vec)-1);
-    return VEC_OK;
-}
-
-stock Vec_AppendFloat(Vec:vec, Float:value) {
-    return Vec_Append(vec, _:value);
-}
-
-stock Vec_AppendVec(Vec:vec, Vec:value) {
-    return Vec_Append(vec, _:value);
-}
-
-stock Vec_AppendBool(Vec:vec, bool:value) {
-    return Vec_Append(vec, _:value);
-}
-
-stock Vec_AppendArray(Vec:vec, const arr[], arrSize = sizeof arr) {
-    if(!Vec_IsValid(vec)) {
-        return VEC_INVALID;
-    }
-
-    if(Vec_IsReadOnly(vec)) {
-        return VEC_NOP;
-    }
-
-    new length = Vec_GetLength(vec);
-    new Alloc:alloc = Vec_GetVecAllocSlot(vec);
-    alloc = Vec_internalAppendArray(alloc, arr, arrSize, length, mget(Vec_increase, _:vec), Vec_IsFixedSize(vec));
-    if(alloc == NO_ALLOC) {
-        return VEC_NOALLOC;
-    }
-    //update the allocated data id
-    mset(Vec_vectorSlot, _:vec, _:alloc);
-    //update the length of the vector
-    Vec_SetLen(vec, length);
-    return VEC_OK;
-}
-
-stock Vec_AppendString(Vec:vec, const str[], arrSize = sizeof str) {
-    new ret = Vec_AppendArray(vec, str, arrSize);
-    if(ret == VEC_OK) {
-        Vec_SetLen(vec, Vec_GetLength(vec)-1);
-    }
-    return ret;
-}
-
-stock Vec_GetValue(Vec:vec, index) {
-    if(!Vec_IsValid(vec)) {
-        return VEC_INVALID;
-    }
-    if(index >= Vec_GetCapacity(vec)) {
-        return VEC_NOALLOC;
-    }
-    return mget(Vec_GetVecAllocSlot(vec), index);
-}
-
-stock bool:Vec_GetValueBool(Vec:vec, index) {
-    return bool:Vec_GetValue(vec, index);
-}
-
-stock Vec:Vec_GetValueVec(Vec:vec, index) {
-    return Vec:Vec_GetValue(vec, index);
-}
-
-stock bool:Vec_GetValueFloat(Vec:vec, index) {
-    return Float:Vec_GetValue(vec, index);
-}
-
-stock Vec_SetValue(Vec:vec, index, value) {
-    if(!Vec_IsValid(vec)) {
-        return VEC_INVALID;
-    }
-
-    if(Vec_IsReadOnly(vec)) {
-        return VEC_NOP;
-    }
-
-    if(index > Vec_GetLength(vec)) {
-        if(index >= Vec_GetCapacity(vec)) {
-            new ret = Vec_Resize(vec, index + mget(Vec_increase, _:vec));
-            if(ret != VEC_OK) {
-                return ret;
-            }
-        }
-        Vec_SetLen(vec, index+1);
-    }
-    mset(Vec_GetVecAllocSlot(vec), index, value);
-    return VEC_OK;
-}
-
-stock Vec_SetValueFloat(Vec:vec, index, Float:value) {
-    return Vec_SetValue(vec, index, _:value);
-}
-
-stock Vec_SetValueVec(Vec:vec, index, Vec:value) {
-    return Vec_SetValue(vec, index, _:value);
-}
-
-stock Vec_SetValueBool(Vec:vec, index, bool:value) {
-    return Vec_SetValue(vec, index, _:value);
-}
-
-stock Vec_RemoveAt(Vec:vec, index) {
-    if(!Vec_IsValid(vec)) {
-        return VEC_INVALID;
-    }
-    if(Vec_IsReadOnly(vec)) {
-        return VEC_NOP;
-    }
-
-    new length = Vec_GetLength(vec);
-    Vec_internalRemove(Vec_GetVecAllocSlot(vec), index, Vec_IsOrdered(vec), length);
-    Vec_SetLen(vec, length);
-    return VEC_OK;
-}
-
-stock Vec_RemoveElement(Vec:vec, value) {
-    inline remVal(val) {
-        inline_return val == value ? true : false;
-    }
-    return Vec_Remove(vec, using inline remVal);
-}
-
-stock Vec_Remove(Vec:vec, Func:predicate<i>) {
-    if(!Vec_IsValid(vec)) {
-        return VEC_INVALID;
-    }
-
-    if(Vec_IsReadOnly(vec)) {
-        return VEC_NOP;
-    }
-
-    for(new i = 0, j = Vec_GetLength(vec); i < j; i++) {
-        if(@.predicate(Vec_GetValue(vec, i))) {
-            Vec_RemoveAt(vec, i);
-            return VEC_OK;
-        }
-    }
-    return VEC_NOT_FOUND;
-}
-
-stock Vec_RemoveLastElement(Vec:vec, value) {
-    inline remVal(val) {
-        inline_return val == value ? true : false;
-    }
-    return Vec_RemoveLast(vec, using inline remVal);
-}
-
-stock Vec_RemoveLast(Vec:vec, Func:predicate<i>) {
-    if(!Vec_IsValid(vec)) {
-        return VEC_INVALID;
-    }
-    if(Vec_IsReadOnly(vec)) {
-        return VEC_NOP;
-    }
-
-    for(new i = Vec_GetLength(vec) - 1; i >= 0; i--) {
-        if(@.predicate(Vec_GetValue(vec, i))) {
-            Vec_RemoveAt(vec, i);
-            return VEC_OK;
-        }
-    }
-    return VEC_NOT_FOUND;
-}
-
-stock Vec_RemoveAllElements(Vec:vec, value) {
-    inline remVal(val) {
-        inline_return val == value ? true : false;
-    }
-    return Vec_RemoveAll(vec, using inline remVal);
-}
-
-stock Vec_RemoveAll(Vec:vec, Func:predicate<i>) {
-    if(!Vec_IsValid(vec)) {
-        return VEC_INVALID;
-    }
-
-    if(Vec_IsReadOnly(vec)) {
-        return VEC_NOP;
-    }
-
-    for(new i = 0; i < Vec_GetLength(vec); i++) {
-        if(@.predicate(Vec_GetValue(vec, i))) {
-            Vec_RemoveAt(vec, i);
-        }
-    }
-    return VEC_OK;
-}
-
-stock Vec_ChangeString(Vec:vec, const str[], len = -1) {
-    if(!Vec_IsValid(vec)) {
-        return VEC_INVALID;
-    }
-
-    if(Vec_IsReadOnly(vec)) {
-        return VEC_NOP;
-    }
-
-    if(len == -1) {
-        len = strlen(str);
-    }
-
-    //reset vector's length and append string at the start
-    Vec_SetLen(vec, 0);
-    if(Vec_AppendString(vec, str, len+1) == VEC_NOALLOC) {
-        return VEC_NOALLOC;
-    }
-    return VEC_OK;
-}
-
-stock Vec_AppendVector(Vec:vec, Vec:toAppend, start = 0, end = 0) {
-    if(end == 0) {
-        end = Vec_GetLength(toAppend);
-    }
-    return Vec_AppendArray(vec, mget(Vec_GetVecAllocSlot(toAppend), start), end-start+1);
-}
-
-stock Vec_CopyTo(Vec:vec, dest[], start = 0, end = 0, maxSize = sizeof(dest)) {
-    if(!Vec_IsValid(vec)) {
-        return VEC_INVALID;
-    }
-
-    if(end == 0 || end > maxSize) {
-        end = maxSize;
-    }
-    memcpy(dest, mget(Vec_GetVecAllocSlot(vec), start), 0, (end - start)*4, end);
-    return VEC_OK;
-}
-
-stock Vec_Reverse(Vec:vec, start = 0, end = 0) {
-    if(!Vec_IsValid(vec)) {
-        return VEC_INVALID;
-    }
-
-    if(Vec_IsReadOnly(vec)) {
-        return VEC_NOP;
-    }
-
-    if(end == 0) {
-        end = Vec_GetLength(vec)-1;
-    }
-
-    if(start == end) {
-        return VEC_NOP;
-    }
-
-    for(new i = start, tmp, j = end; i < j; i++, j--) {
-        tmp = Vec_GetValue(vec, j);
-        Vec_SetValue(vec, j, Vec_GetValue(vec, i));
-        Vec_SetValue(vec, i, tmp);
-    }
-    return VEC_OK;
-}
-
-stock Vec_SetArray(Vec:vec, index, const array[], start = 0, end = 0, size = sizeof(array)) {
-    if(!Vec_IsValid(vec)) {
-        return VEC_INVALID;
-    }
-
-    if(Vec_IsReadOnly(vec)) {
-        return VEC_NOP;
-    }
-
-    if(end == 0 || end > size) {
-        end = size-1;
-    }
-
-    if(start == end) {
-        return Vec_SetValue(vec, index, array[start]);
-    }
-
-    if(index + end - start >= Vec_GetCapacity(vec)) {
-        new ret = Vec_Resize(vec, index + end - start + mget(Vec_increase, _:vec));
-        if(ret != VEC_OK) {
-            return ret;
-        }
-    }
-
-    mseta(Vec_GetVecAllocSlot(vec), index, array[start], end);
-    return VEC_OK;
-}
-
-stock bool:Vec_Find(Vec:vec, Func:predicate<i>, &index = 0) {
-    if(!Vec_IsValid(vec)) {
-        index = -2;
-        return false;
-    }
-
-    for(new i = 0, len = Vec_GetLength(vec); i < len; i++) {
-        if(@.predicate(Vec_GetValue(vec, i))) {
-            index = i;
-            return true;
-        }
-    }
-    index = -1;
-    return false;
-}
-
-stock bool:Vec_FindElement(Vec:vec, value, &index = 0) {
-    inline finder(val) {
-         inline_return val == value ? true : false;
-    }
-    return Vec_Find(vec, using inline finder, index);
-}
-
-stock bool:Vec_FindLast(Vec:vec, Func:predicate<i>, &index = 0) {
-    if(!Vec_IsValid(vec)) {
-        index = -2;
-        return false;
-    }
-
-    for(new i = Vec_GetLength(vec) - 1; i >= 0; i--) {
-        if(@.predicate(Vec_GetValue(vec, i))) {
-            index = i;
-            return true;
-        }
-    }
-    index = -1;
-    return false;
-}
-
-stock bool:Vec_FindLastElement(Vec:vec, value, &index = 0) {
-    inline finder(val) {
-        inline_return val == value ? true : false;
-    }
-    return Vec_FindLast(vec, using inline finder, index);
-}
-
-stock Vec:Vec_FindAll(Vec:vec, Func:predicate<i>) {
-    if(!Vec_IsValid(vec)) {
-        return INVALID_VECTOR_ID;
-    }
-
-    new Vec:indexVector = Vec_New(2);
-    for(new i = 0; i < Vec_GetLength(vec); i++) {
-        if(@.predicate(Vec_GetValue(vec, i))) {
-            Vec_Append(indexVector, i);
-        }
-    }
-    if(Vec_GetLength(indexVector) == 0) {
-        Vec_Delete(indexVector);
-        indexVector = INVALID_VECTOR_ID;
-    }
-    return indexVector;
-}
-
-stock Vec:Vec_FindAllElements(Vec:vec, value) {
-    inline finder(val) {
-         inline_return val == value ? true : false;
-    }
-    return Vec_FindAll(vec, using inline finder);
-}
-
-stock Vec_Sort(Vec:unsorted) {
-    inline defSorter(value1, value2) {
-        return value1 <= value2 ? true : false;
-    }
-    return Vec_SortBy(unsorted, using inline defSorter);
-}
-
-stock Vec_SortBy(Vec:unsorted, Func:Compare<ii>) {
-    return Vec_SortAt(unsorted, Compare, 0, Vec_GetLength(unsorted)-1);
-}
-
-stock Vec_SortAt(Vec:unsorted, Func:Compare<ii>, start, end) {
-    if(!Vec_IsValid(unsorted)) {
-        return VEC_INVALID;
-    }
+stock E_VEC_ERROR:Vec_SortAt(Vec:unsorted, Func:Comparer<ii>, start = 0, end) {
+    if(Vec_IsReadOnly(unsorted))
+		return E_VEC_ERROR_READ_ONLY;
 
     if(start < end) {
-        new pi = Vec_QSPartition(unsorted, Compare, start, end);
-        Vec_SortAt(unsorted, Compare, start, pi-1);
-        Vec_SortAt(unsorted, Compare, pi+1, end);
-        return VEC_OK;
+        new pi = Vec_QSPartition(unsorted, Comparer, start, end);
+		printf("%d, %d, %d", start, end, pi);
+        Vec_SortAt(unsorted, Comparer, start, pi-1);
+        Vec_SortAt(unsorted, Comparer, pi+1, end);
+        return E_VEC_ERROR_OK;
     }
-    return VEC_NOP;
+    return E_VEC_ERROR_INVALID_INDEX;
 }
 
-stock Vec_Swap(Vec:vec, index1, index2) {
-    if(!Vec_IsValid(vec)) {
-        return VEC_INVALID;
+stock E_VEC_ERROR:Vec_Sort(Vec:unsorted, start = 0, end = 0) {
+    inline defaultComparer(value1, value2) {
+        inline_return value1 <= value2 ? true : false;
     }
-
-    new tmp = Vec_GetValue(vec, index1);
-    Vec_SetValue(vec, index1, Vec_GetValue(vec, index2));
-    Vec_SetValue(vec, index2, tmp);
-    return VEC_OK;
+	if(end == 0)
+		end = Vec_Len(unsorted) - 1;
+    return Vec_SortAt(unsorted, using inline defaultComparer, start, end);
 }
 
-stock Vec_Clear(Vec:vec) {
-    if(!Vec_IsValid(vec)) {
-        return VEC_INVALID;
-    }
-    memset(mget(Vec_GetVecAllocSlot(vec), 0), 0, Vec_GetLength(vec));
-    mset(Vec_vectorLength, _:vec, 0);
-    return VEC_OK;
-}
-
-stock bool:Vec_TrueForAll(Vec:vec, Func:predicate<i>) {
-    if(!Vec_IsValid(vec)) {
-        return false;
-    }
-
-    new bool:pass = true;
-    for(new i = 0, j = Vec_GetLength(vec); i < j; i++) {
-        if(!@.predicate(Vec_GetValue(vec, i))) {
-            pass = false;
-            break;
-        }
-    }
-    return pass;
-}
-
-stock Vec_BinarySearchElement(Vec:vec, value) {
-    inline searchVal(val) {
-        if(val == value) {
-            return 0;
-        } else if(val < value) {
-            return -1;
-        } else {
-            return 1;
-        }
-    }
-    return Vec_BinarySearch(vec, using inline searchVal);
-}
-
-stock Vec_BinarySearch(Vec:vec, Func:predicate<i>) {
-    new start = 0, end = Vec_GetLength(vec)-1, middle;
-
-    while(start <= end) {
-        if(!@.predicate(Vec_GetValue(vec, start))) {
-            return start;
-        }
-        if(!@.predicate(Vec_GetValue(vec, end))) {
-            return end;
-        }
-        middle = (end + start)/2;
-
-        if(!@.predicate(Vec_GetValue(vec, middle))) {
-            return middle;
-        } else if(@.predicate(Vec_GetValue(vec, middle)) == -1) {
-            start = middle+1;
-        } else {
-            end = middle-1;
-        }
-    }
-    return -1;
-}
-
-stock Vec_Delete(Vec:vec) {
-    if(!Vec_IsValid(vec)) {
-        return VEC_INVALID;
-    }
-
-    Vec_ReleaseId(vec);
-    Malloc_Free(Vec_GetVecAllocSlot(vec));
-    Vec_SetLen(vec, 0);
-    Vec_ToggleOrdered(vec, false);
-    mset(Vec_vectorSlot, _:vec, 0);
-    return VEC_OK;
+stock Vec_Delete(&Vec:vector)
+{
+	new res = Malloc_Free(Alloc:vector);
+	vector = INVALID_VECTOR;
+	return res;
 }
