@@ -37,36 +37,14 @@ sampctl package install killermvc/pawn-vector
 Include in your code and begin using the library:
 
 ```pawn
-<<<<<<< HEAD
 #include <vector>
-=======
-#include <pawn-vector>
->>>>>>> vector-rewrite
 ```
 
 ## Usage
-
-<<<<<<< HEAD
 You can find the documentation in the [wiki](https://github.com/killermvc/pawn-vector/wiki)
 
 ## Testing
 
-=======
-<!--
-Write your code documentation or examples here. If your library is documented in
-the source code, direct users there. If not, list your API and describe it well
-in this section. If your library is passive and has no API, simply omit this
-section.
--->
-
-## Testing
-
-<!--
-Depending on whether your package is tested via in-game "demo tests" or
-y_testing unit-tests, you should indicate to readers what to expect below here.
--->
-
->>>>>>> vector-rewrite
 To test, simply run the package:
 
 ```bash
