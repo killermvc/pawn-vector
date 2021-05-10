@@ -29,9 +29,21 @@ enum E_VEC_ERROR()
 #define Vec_GetAsArray(%0,%1)			Malloc_GetData(Alloc:%0,(%1)+_:e_VEC_DATA)
 #define Vec_GetString(%0)				Malloc_GetData(Alloc:%0,_:e_VEC_DATA)
 
-#define VEC_FOREACH(%9new%0:%1)			for(new i__=_:VEC_FOREACH_R:VEC_FOREACH_N:(%0,%1)
+#define VEC_FOREACH(%9new%0:%1)	for(new i__=_:VEC_FOREACH_R:VEC_FOREACH_N:(%0,%1)
 
 #define VEC_FOREACH_R:VEC_FOREACH_N:(%0,%1[%2..%3]%4)							\
+	VFRFN:VFRFY:VFRLN:VFRLY:VFRE:(%0,%1,'''%2''',´´´%3´´´)
+
+#define VFRFN:%0(%1,%2,'''''',%3)												\
+	%0(%1,%2,0,%3)
+#define VFRFY:%0(%1,%2,'''%3''',%4)												\
+	%0(%1,%2,%3,%4)
+#define VFRLN:%0(%1,%2,%3,´´´´´´)												\
+	%0(%1,%2,%3,Vec_Len(%2))
+#define VFRLY:%0(%1,%2,%3,´´´%4´´´)												\
+	%0(%1,%2,%3,%4)
+
+#define VFRE:(%0,%1,%2,%3)														\
 	%2,len__=%3,%0=Vec_Get(%1,%2);i__<len__;++i__,%0=Vec_Get(%1,i__))
 
 #define VEC_FOREACH_N:(%0,%1)													\
@@ -527,7 +539,6 @@ stock E_VEC_ERROR:Vec_SortAt(Vec:unsorted, Func:Comparer<ii>, start = 0, end) {
 
     if(start < end) {
         new pi = Vec_QSPartition(unsorted, Comparer, start, end);
-		printf("%d, %d, %d", start, end, pi);
         Vec_SortAt(unsorted, Comparer, start, pi-1);
         Vec_SortAt(unsorted, Comparer, pi+1, end);
         return E_VEC_ERROR_OK;

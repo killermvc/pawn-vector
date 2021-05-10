@@ -378,6 +378,51 @@ Test:ForEach_Range()
 	}
 }
 
+Test:ForEach_Range_NoStart()
+{
+	new
+		arr[] = {1, 2, 3, 4, 5, 6, 7, 8},
+		Vec:vec = Vec_NewFromArray(10, arr),
+		i = 0;
+
+	VEC_FOREACH(new value : vec[..6])
+	{
+		ASSERT_EQ(Vec_Get(vec, i), value);
+		i++;
+	}
+	ASSERT_EQ(i, 6);
+}
+
+Test:ForEach_RangeNoEnd()
+{
+	new
+		arr[] = {1, 2, 3, 4, 5, 6, 7, 8},
+		Vec:vec = Vec_NewFromArray(10, arr),
+		i = 2;
+
+	VEC_FOREACH(new value : vec[2..])
+	{
+		ASSERT_EQ(Vec_Get(vec, i), value);
+		i++;
+	}
+	ASSERT_EQ(i, 8);
+}
+
+Test:ForEach_RangeNoStartNoEnd()
+{
+	new
+		arr[] = {1, 2, 3, 4, 5, 6, 7, 8},
+		Vec:vec = Vec_NewFromArray(10, arr),
+		i = 0;
+
+	VEC_FOREACH(new value : vec[..])
+	{
+		ASSERT_EQ(Vec_Get(vec, i), value);
+		i++;
+	}
+	ASSERT_EQ(i, 8);
+}
+
 Test:String()
 {
 	new Vec:vec = Vec_NewString("Hello, ");
