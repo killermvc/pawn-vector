@@ -423,6 +423,36 @@ Test:ForEach_RangeNoStartNoEnd()
 	ASSERT_EQ(i, 8);
 }
 
+Test:ForEach_RangeNegativeStart()
+{
+	new
+		arr[] = {1, 2, 3, 4, 5, 6, 7, 8},
+		Vec:vec = Vec_NewFromArray(10, arr),
+		i = 0;
+
+	VEC_FOREACH(new value : vec[-1..8])
+	{
+		ASSERT_EQ(Vec_Get(vec, i), value);
+		i++;
+	}
+	ASSERT_EQ(i, 8);
+}
+
+Test:ForEach_RangeEndPastLen()
+{
+	new
+		arr[] = {1, 2, 3, 4, 5, 6, 7, 8},
+		Vec:vec = Vec_NewFromArray(10, arr),
+		i = 0;
+
+	VEC_FOREACH(new value : vec[0..9])
+	{
+		ASSERT_EQ(Vec_Get(vec, i), value);
+		i++;
+	}
+	ASSERT_EQ(i, 8);
+}
+
 Test:String()
 {
 	new Vec:vec = Vec_NewString("Hello, ");

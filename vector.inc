@@ -43,8 +43,10 @@ enum E_VEC_ERROR()
 #define VFRLY:%0(%1,%2,%3,´´´%4´´´)												\
 	%0(%1,%2,%3,%4)
 
+new VEC_ZERO = 0;
+
 #define VFRE:(%0,%1,%2,%3)														\
-	%2,len__=%3,%0=Vec_Get(%1,%2);i__<len__;++i__,%0=Vec_Get(%1,i__))
+	%2>=VEC_ZERO?%2:0,end__=%3,%0=Vec_Get(%1,i__),len__=Vec_Len(%1);i__<end__&&i__<len__;++i__,%0=Vec_Get(%1,i__))
 
 #define VEC_FOREACH_N:(%0,%1)													\
 	0,len__=Vec_Len(%1),%0=Vec_Get(%1,0);i__<len__;++i__,%0=Vec_Get(%1,i__))
@@ -199,7 +201,6 @@ stock E_VEC_ERROR:Vec_RemoveAt(Vec:vector, index)
 		Vec_Set(vector, len - 1, 0);
 		Vec_SetLen(vector, len - 1);
 	}
-
 	return E_VEC_ERROR_OK;
 }
 
