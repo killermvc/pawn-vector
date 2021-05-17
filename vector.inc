@@ -26,8 +26,11 @@ enum E_VEC_ERROR()
 	E_VEC_ERROR_INVALID_INDEX
 }
 
+
 #define Vec_GetAsArray(%0,%1)			Malloc_GetData(Alloc:%0,(%1)+_:e_VEC_DATA)
 #define Vec_GetString(%0)				Malloc_GetData(Alloc:%0,_:e_VEC_DATA)
+
+//TODO: What happens if a value is deleted inside foreach loop?
 
 #define VEC_FOREACH(%9new%0:%1)	for(new i__=_:VEC_FOREACH_R:VEC_FOREACH_N:(%0,%1)
 
@@ -43,7 +46,7 @@ enum E_VEC_ERROR()
 #define VFRLY:%0(%1,%2,%3,´´´%4´´´)												\
 	%0(%1,%2,%3,%4)
 
-new VEC_ZERO = 0;
+stock VEC_ZERO = 0;
 
 #define VFRE:(%0,%1,%2,%3)														\
 	%2>=VEC_ZERO?%2:0,end__=%3,%0=Vec_Get(%1,i__),len__=Vec_Len(%1);i__<end__&&i__<len__;++i__,%0=Vec_Get(%1,i__))
