@@ -13,10 +13,10 @@ Test:New()
 
 	//y_malloc allocates multiples of 16 cells. so the capacity allocated is 32.
 	//However y_malloc uses one of this cells to store the capacity
-	//and pawn-vector uses 4 more to store the length, the growth, if it's ordered and if it's read only
-	//thus the reported capacity is 28.
+	//and pawn-vector uses 4 more to store the length and the attributes
+	//thus the reported capacity is 29.
 	ASSERT_NE(vec, INVALID_VECTOR);
-	ASSERT_EQ(Vec_Capacity(vec), 27);
+	ASSERT_EQ(Vec_Capacity(vec), 29);
 	ASSERT_EQ(Vec_Len(vec), 0);
 	ASSERT_EQ(Vec_Growth(vec), 28);
 	ASSERT(Vec_IsOrdered(vec));
@@ -51,14 +51,13 @@ Test:AppendResize()
 
 	//y_malloc allocates multiples of 16 cells. when creating the vector, the capacity allocated is 16,
 	//after the resize is 32. However y_malloc uses one of this cells to store the capacity
-	//and pawn-vector uses 4 more to store the length, the growth if it's ordered and if it's read only
-	//thus the reported capacity is 27.
-	ASSERT_EQ(Vec_Capacity(vec), 27);
+	//and pawn-vector uses 4 more to store the length and the attributes
+	//thus the reported capacity is 29.
+	ASSERT_GE(Vec_Capacity(vec), 10 + 10);
 	for(new i = 0; i < 14; ++i)
 	{
 		ASSERT_EQ(Vec_Get(vec, i), i+1);
 	}
-
 	Vec_Delete(vec);
 }
 
@@ -92,12 +91,10 @@ Test:Set()
 Test:SetPastCapacity()
 {
 	new Vec:vec = Vec_New(10);
-
-	Vec_Set(vec, 12, 7);
-
-	ASSERT_EQ(Vec_Len(vec), 13);
-	ASSERT_EQ(Vec_Get(vec, 12), 7);
-	ASSERT_GE(Vec_Capacity(vec), 11 + VEC_DEFAULT_GROWTH);
+	Vec_Set(vec, 14, 7);
+	ASSERT_EQ(Vec_Len(vec), 15);
+	ASSERT_EQ(Vec_Get(vec, 14), 7);
+	ASSERT_GE(Vec_Capacity(vec), 14 + VEC_DEFAULT_GROWTH );
 
 	Vec_Delete(vec);
 }

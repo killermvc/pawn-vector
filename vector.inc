@@ -12,10 +12,16 @@
 enum e_VEC_DATA()
 {
 	e_VEC_DATA_LEN,
-	e_VEC_DATA_GROWTH,
-	e_VEC_DATA_IS_ORDERED,
-	e_VEC_DATA_IS_READ_ONLY
+	//First 30 bits are for storing the growth the next 2 bits are for storing flags
+	e_VEC_DATA_ATTRIBUTES
 }
+
+enum e_VEC_FLAGS (<<= 2)
+{
+	e_VEC_FLAGS_IS_ORDERED = 1,
+	e_VEC_FLAGS_IS_READ_ONLY
+}
+static const VEC_FLAGS_COUNT = 2;
 
 enum E_VEC_ERROR()
 {
@@ -29,8 +35,6 @@ enum E_VEC_ERROR()
 
 #define Vec_GetAsArray(%0,%1)			Malloc_GetData(Alloc:%0,(%1)+_:e_VEC_DATA)
 #define Vec_GetString(%0)				Malloc_GetData(Alloc:%0,_:e_VEC_DATA)
-
-//TODO: What happens if a value is deleted inside foreach loop?
 
 #define VEC_FOREACH(%9new%0:%1)	for(new i__=_:VEC_FOREACH_R:VEC_FOREACH_N:(%0,%1)
 
@@ -56,13 +60,61 @@ stock VEC_ZERO = 0;
 
 #define INVALID_VECTOR			(Vec:NO_ALLOC)
 
+
+stock bool:Vec_IsOrdered(Vec:vector)
+{
+	return bool:(Malloc_Get(Alloc:vector, e_VEC_DATA_ATTRIBUTES) & _:e_VEC_FLAGS_IS_ORDERED);
+}
+
+stock Vec_SetOrdered(Vec:vector, bool:set)
+{
+	new attr = Malloc_Get(Alloc:vector, e_VEC_DATA_ATTRIBUTES);
+	if(set)
+	{
+		Malloc_Set(Alloc:vector, e_VEC_DATA_ATTRIBUTES, attr | _:e_VEC_FLAGS_IS_ORDERED);
+	}
+	else
+	{
+		Malloc_Set(Alloc:vector, e_VEC_DATA_ATTRIBUTES, attr & ~_:e_VEC_FLAGS_IS_ORDERED);
+	}
+}
+
+stock bool:Vec_IsReadOnly(Vec:vector)
+{
+	return bool:(Malloc_Get(Alloc:vector, e_VEC_DATA_ATTRIBUTES) & _:e_VEC_FLAGS_IS_READ_ONLY);
+}
+
+stock Vec_SetReadOnly(Vec:vector, bool:set)
+{
+	new attr = Malloc_Get(Alloc:vector, e_VEC_DATA_ATTRIBUTES);
+	if(set)
+	{
+		Malloc_Set(Alloc:vector, e_VEC_DATA_ATTRIBUTES, attr | e_VEC_FLAGS_IS_READ_ONLY);
+	}
+	else
+	{
+		Malloc_Set(Alloc:vector, e_VEC_DATA_ATTRIBUTES, attr & ~e_VEC_FLAGS_IS_READ_ONLY);
+	}
+}
+
+stock Vec_Growth(Vec:vector)
+{
+	return Malloc_Get(Alloc:vector, e_VEC_DATA_ATTRIBUTES) >> VEC_FLAGS_COUNT;
+}
+
+stock Vec_SetGrowth(Vec:vector, growth)
+{
+	new flags = Malloc_Get(Alloc:vector, e_VEC_DATA_ATTRIBUTES) / 4;
+	Malloc_Set(Alloc:vector, e_VEC_DATA_ATTRIBUTES, growth << VEC_FLAGS_COUNT | flags);
+}
+
 stock Vec:Vec_New(capacity, bool:isOrdered = false, growth = VEC_DEFAULT_GROWTH)
 {
-	new Alloc:newVec = calloc(capacity + _:e_VEC_DATA);
-	if(newVec == NO_ALLOC)
+	new Vec:newVec = Vec:calloc(capacity + _:e_VEC_DATA);
+	if(newVec == INVALID_VECTOR)
 		return INVALID_VECTOR;
-	Malloc_Set(newVec, e_VEC_DATA_GROWTH, growth);
-	Malloc_Set(newVec, e_VEC_DATA_IS_ORDERED, _:isOrdered);
+	Vec_SetGrowth(newVec, growth);
+	Vec_SetOrdered(newVec, isOrdered);
 	return Vec:newVec;
 }
 
@@ -92,31 +144,6 @@ stock Vec_Len(Vec:vector)
 	return Malloc_Get(Alloc:vector, e_VEC_DATA_LEN);
 }
 
-stock bool:Vec_IsOrdered(Vec:vector)
-{
-	return bool:Malloc_Get(Alloc:vector, e_VEC_DATA_IS_ORDERED);
-}
-
-stock Vec_SetOrdered(Vec:vector, bool:set)
-{
-	Malloc_Set(Alloc:vector, e_VEC_DATA_IS_ORDERED, _:set);
-}
-
-stock bool:Vec_IsReadOnly(Vec:vector)
-{
-	return bool:Malloc_Get(Alloc:vector, e_VEC_DATA_IS_READ_ONLY);
-}
-
-stock Vec_SetReadOnly(Vec:vector, bool:set)
-{
-	Malloc_Set(Alloc:vector, e_VEC_DATA_IS_READ_ONLY, _:set);
-}
-
-stock Vec_Growth(Vec:vector)
-{
-	return Malloc_Get(Alloc:vector, e_VEC_DATA_GROWTH);
-}
-
 stock E_VEC_ERROR:Vec_ReSize(& Vec:vector, newSize)
 {
 	new Alloc:newVector = realloc(Alloc:vector, newSize, true);
@@ -144,7 +171,7 @@ stock E_VEC_ERROR:Vec_Append(&Vec:vector, value)
 	new size =  Vec_Capacity(vector);
 	if(size <= Vec_Len(vector))
 	{
-		if(Vec_ReSize(vector, size + Vec_Growth(vector)) != E_VEC_ERROR_OK)
+		if(Vec_ReSize(vector, size + Vec_Growth(vector) + _:e_VEC_DATA + 1) != E_VEC_ERROR_OK)
 			return E_VEC_ERROR_NO_ALLOC;
 	}
 	new len = Vec_Len(vector);
@@ -173,7 +200,7 @@ stock E_VEC_ERROR:Vec_Set(&Vec:vector, index, value)
 		return E_VEC_ERROR_READ_ONLY;
 	if(index >= Vec_Capacity(vector))
 	{
-		if(Vec_ReSize(vector, index + Vec_Growth(vector)) != E_VEC_ERROR_OK)
+		if(Vec_ReSize(vector, index + Vec_Growth(vector) + _:e_VEC_DATA + 1) != E_VEC_ERROR_OK)
 			return E_VEC_ERROR_NO_ALLOC;
 	}
 
@@ -519,16 +546,21 @@ stock E_VEC_ERROR:Vec_Reverse(Vec:vector, start = 0, end = 0)
 stock Vec_CopyTo(Vec:vector, dest[], start = 0, end = 0, size = sizeof dest)
 {
 	if(end == 0 || end > size)
+	{
 		end = size;
+	}
 
 	memcpy(dest, Vec_GetAsArray(vector, start), 0, (end - start)*4, end);
 }
 
-static stock Vec_QSPartition(Vec:unsorted, Func:Comparer<ii>, start, end) {
+static stock Vec_QSPartition(Vec:unsorted, Func:Comparer<ii>, start, end)
+{
     new pivot = Vec_Get(unsorted, end);
     new i = start - 1;
-    for(new j = start; j <= end-1; j++) {
-        if(@.Comparer(Vec_Get(unsorted, j), pivot)) {
+    for(new j = start; j <= end-1; j++)
+	{
+        if(@.Comparer(Vec_Get(unsorted, j), pivot))
+		{
             i++;
             Vec_Swap(unsorted, i, j);
         }
@@ -537,11 +569,13 @@ static stock Vec_QSPartition(Vec:unsorted, Func:Comparer<ii>, start, end) {
     return i+1;
 }
 
-stock E_VEC_ERROR:Vec_SortAt(Vec:unsorted, Func:Comparer<ii>, start = 0, end) {
+stock E_VEC_ERROR:Vec_SortAt(Vec:unsorted, Func:Comparer<ii>, start = 0, end)
+{
     if(Vec_IsReadOnly(unsorted))
 		return E_VEC_ERROR_READ_ONLY;
 
-    if(start < end) {
+    if(start < end)
+	{
         new pi = Vec_QSPartition(unsorted, Comparer, start, end);
         Vec_SortAt(unsorted, Comparer, start, pi-1);
         Vec_SortAt(unsorted, Comparer, pi+1, end);
@@ -555,8 +589,19 @@ stock E_VEC_ERROR:Vec_Sort(Vec:unsorted, start = 0, end = 0) {
         inline_return value1 <= value2 ? true : false;
     }
 	if(end == 0)
+	{
 		end = Vec_Len(unsorted) - 1;
+	}
     return Vec_SortAt(unsorted, using inline defaultComparer, start, end);
+}
+
+stock Vec_Clone(Vec:toClone, bool:readOnly = false)
+{
+	new Vec:clonedVector = Vec_New(Vec_Capacity(toClone), Vec_IsOrdered(toClone), Vec_Growth(toClone));
+	if(clonedVector == INVALID_VECTOR)
+		return
+	Vec_AppendVector(clonedVector, toClone);
+	Vec_SetReadOnly(clonedVector, readOnly);
 }
 
 stock Vec_Delete(&Vec:vector)
