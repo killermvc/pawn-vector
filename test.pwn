@@ -652,3 +652,20 @@ Test:Sort()
 	for(new i = 0; i < 8; ++i)
 		ASSERT(Vec_Get(vec, i) == sorted[i]);
 }
+
+Test:Clone()
+{
+	new Vec:vec = Vec_NewFromArray(5, {1, 2, 3, 4, 5});
+
+	new Vec:clone = Vec_Clone(vec, true);
+
+	ASSERT(Vec_IsReadOnly(clone));
+
+	for(new i = 0, i < 5; ++i)
+	{
+		ASSERT_EQ(Vec_Get(clone, i), Vec_Get(vec, i));
+	}
+
+	Vec_Delete(vec);
+	Vec_Delete(clone);
+}

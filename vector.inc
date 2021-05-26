@@ -599,9 +599,10 @@ stock Vec_Clone(Vec:toClone, bool:readOnly = false)
 {
 	new Vec:clonedVector = Vec_New(Vec_Capacity(toClone), Vec_IsOrdered(toClone), Vec_Growth(toClone));
 	if(clonedVector == INVALID_VECTOR)
-		return
+		return INVALID_VECTOR;
 	Vec_AppendVector(clonedVector, toClone);
 	Vec_SetReadOnly(clonedVector, readOnly);
+	return clonedVector;
 }
 
 stock Vec_Delete(&Vec:vector)
