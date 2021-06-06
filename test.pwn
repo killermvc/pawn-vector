@@ -354,7 +354,7 @@ Test:ForEach()
 		Vec:vec = Vec_NewFromArray(10, arr),
 		i = 0;
 
-	VEC_FOREACH(new value : vec)
+	foreach(new value : Vector(vec))
 	{
 		ASSERT_EQ(Vec_Get(vec, i), value);
 		i++;
@@ -368,56 +368,11 @@ Test:ForEach_Range()
 		Vec:vec = Vec_NewFromArray(10, arr),
 		i = 2;
 
-	VEC_FOREACH(new value : vec[2..6])
+	foreach(new value : Vector(vec, 2, 6))
 	{
 		ASSERT_EQ(Vec_Get(vec, i), value);
 		i++;
 	}
-}
-
-Test:ForEach_Range_NoStart()
-{
-	new
-		arr[] = {1, 2, 3, 4, 5, 6, 7, 8},
-		Vec:vec = Vec_NewFromArray(10, arr),
-		i = 0;
-
-	VEC_FOREACH(new value : vec[..6])
-	{
-		ASSERT_EQ(Vec_Get(vec, i), value);
-		i++;
-	}
-	ASSERT_EQ(i, 6);
-}
-
-Test:ForEach_RangeNoEnd()
-{
-	new
-		arr[] = {1, 2, 3, 4, 5, 6, 7, 8},
-		Vec:vec = Vec_NewFromArray(10, arr),
-		i = 2;
-
-	VEC_FOREACH(new value : vec[2..])
-	{
-		ASSERT_EQ(Vec_Get(vec, i), value);
-		i++;
-	}
-	ASSERT_EQ(i, 8);
-}
-
-Test:ForEach_RangeNoStartNoEnd()
-{
-	new
-		arr[] = {1, 2, 3, 4, 5, 6, 7, 8},
-		Vec:vec = Vec_NewFromArray(10, arr),
-		i = 0;
-
-	VEC_FOREACH(new value : vec[..])
-	{
-		ASSERT_EQ(Vec_Get(vec, i), value);
-		i++;
-	}
-	ASSERT_EQ(i, 8);
 }
 
 Test:ForEach_RangeNegativeStart()
@@ -427,7 +382,7 @@ Test:ForEach_RangeNegativeStart()
 		Vec:vec = Vec_NewFromArray(10, arr),
 		i = 0;
 
-	VEC_FOREACH(new value : vec[-1..8])
+	foreach(new value : Vector(vec, -1, 8))
 	{
 		ASSERT_EQ(Vec_Get(vec, i), value);
 		i++;
@@ -442,7 +397,7 @@ Test:ForEach_RangeEndPastLen()
 		Vec:vec = Vec_NewFromArray(10, arr),
 		i = 0;
 
-	VEC_FOREACH(new value : vec[0..9])
+	foreach(new value : Vector(vec, 0, 9))
 	{
 		ASSERT_EQ(Vec_Get(vec, i), value);
 		i++;
@@ -648,9 +603,10 @@ Test:Sort()
 		sorted[] = {1, 2, 3, 4, 5, 6, 7, 8};
 
 	Vec_Sort(vec);
-
 	for(new i = 0; i < 8; ++i)
-		ASSERT(Vec_Get(vec, i) == sorted[i]);
+	{
+		ASSERT_EQ(Vec_Get(vec, i), sorted[i]);
+	}
 }
 
 Test:Clone()
@@ -660,8 +616,7 @@ Test:Clone()
 	new Vec:clone = Vec_Clone(vec, true);
 
 	ASSERT(Vec_IsReadOnly(clone));
-
-	for(new i = 0, i < 5; ++i)
+	for(new i = 0; i < 5; ++i)
 	{
 		ASSERT_EQ(Vec_Get(clone, i), Vec_Get(vec, i));
 	}

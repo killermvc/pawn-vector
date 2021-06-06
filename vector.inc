@@ -4,6 +4,7 @@
 #define _vector_included
 
 #include <a_samp>
+#include <YSI_Data\y_iterate>
 #include <YSI_Coding\y_inline>
 #include <YSI_Coding\y_malloc>
 
@@ -32,31 +33,31 @@ enum E_VEC_ERROR()
 	E_VEC_ERROR_INVALID_INDEX
 }
 
+iterfunc stock Vector(&iterstate, cur, Vec:vector, start = 0, end = -1)
+{
+	new len = Vec_Len(vector);
+	if(end == -1 || end > len)
+	{
+		end = len;
+	}
+	if(start < 0)
+	{
+		start = 0;
+	}
+	if(cur == cellmin)
+	{
+		iterstate = start-1;
+	}
+	if(iterstate++ >= end-1)
+	{
+		return cellmin;
+	}
+	return Vec_Get(vector, iterstate);
+}
+#define iterstart@Vector iterstate(cellmin, 0)
 
 #define Vec_GetAsArray(%0,%1)			Malloc_GetData(Alloc:%0,(%1)+_:e_VEC_DATA)
 #define Vec_GetString(%0)				Malloc_GetData(Alloc:%0,_:e_VEC_DATA)
-
-#define VEC_FOREACH(%9new%0:%1)	for(new i__=_:VEC_FOREACH_R:VEC_FOREACH_N:(%0,%1)
-
-#define VEC_FOREACH_R:VEC_FOREACH_N:(%0,%1[%2..%3]%4)							\
-	VFRFN:VFRFY:VFRLN:VFRLY:VFRE:(%0,%1,'''%2''',´´´%3´´´)
-
-#define VFRFN:%0(%1,%2,'''''',%3)												\
-	%0(%1,%2,0,%3)
-#define VFRFY:%0(%1,%2,'''%3''',%4)												\
-	%0(%1,%2,%3,%4)
-#define VFRLN:%0(%1,%2,%3,´´´´´´)												\
-	%0(%1,%2,%3,Vec_Len(%2))
-#define VFRLY:%0(%1,%2,%3,´´´%4´´´)												\
-	%0(%1,%2,%3,%4)
-
-stock VEC_ZERO = 0;
-
-#define VFRE:(%0,%1,%2,%3)														\
-	%2>=VEC_ZERO?%2:0,end__=%3,%0=Vec_Get(%1,i__),len__=Vec_Len(%1);i__<end__&&i__<len__;++i__,%0=Vec_Get(%1,i__))
-
-#define VEC_FOREACH_N:(%0,%1)													\
-	0,len__=Vec_Len(%1),%0=Vec_Get(%1,0);i__<len__;++i__,%0=Vec_Get(%1,i__))
 
 #define INVALID_VECTOR			(Vec:NO_ALLOC)
 
@@ -89,11 +90,11 @@ stock Vec_SetReadOnly(Vec:vector, bool:set)
 	new attr = Malloc_Get(Alloc:vector, e_VEC_DATA_ATTRIBUTES);
 	if(set)
 	{
-		Malloc_Set(Alloc:vector, e_VEC_DATA_ATTRIBUTES, attr | e_VEC_FLAGS_IS_READ_ONLY);
+		Malloc_Set(Alloc:vector, e_VEC_DATA_ATTRIBUTES, attr | _:e_VEC_FLAGS_IS_READ_ONLY);
 	}
 	else
 	{
-		Malloc_Set(Alloc:vector, e_VEC_DATA_ATTRIBUTES, attr & ~e_VEC_FLAGS_IS_READ_ONLY);
+		Malloc_Set(Alloc:vector, e_VEC_DATA_ATTRIBUTES, attr & ~_:e_VEC_FLAGS_IS_READ_ONLY);
 	}
 }
 
@@ -252,7 +253,9 @@ stock E_VEC_ERROR:Vec_RemoveFirstBy(Vec:vector, Func:predicate<i>)
 stock E_VEC_ERROR:Vec_RemoveFirstElement(Vec:vector, value)
 {
 	inline matchValue(val)
+	{
 		inline_return val == value;
+	}
 	return Vec_RemoveFirstBy(vector, using inline matchValue);
 }
 
@@ -275,7 +278,9 @@ stock E_VEC_ERROR:Vec_RemoveLastBy(Vec:vector, Func:predicate<i>)
 stock E_VEC_ERROR:Vec_RemoveLastElement(Vec:vector, value)
 {
 	inline matchValue(val)
+	{
 		inline_return val == value;
+	}
 
 	return Vec_RemoveLastBy(vector, using inline matchValue);
 }
@@ -300,7 +305,9 @@ stock E_VEC_ERROR:Vec_RemoveAllBy(Vec:vector, Func:predicate<i>)
 stock E_VEC_ERROR:Vec_RemoveAllElements(Vec:vector, value)
 {
 	inline matchValue(val)
+	{
 		inline_return val == value;
+	}
 	return Vec_RemoveAllBy(vector, using inline matchValue);
 }
 
@@ -325,7 +332,9 @@ stock bool:Vec_ContainsBy(Vec:vector, Func:predicate<i>)
 stock bool:Vec_Contains(Vec:vector, value)
 {
 	inline matchValue(val)
+	{
 		inline_return val == value;
+	}
 	return Vec_ContainsBy(vector, using inline matchValue);
 }
 
@@ -351,7 +360,9 @@ stock Vec_FindFirstBy(Vec:vector, Func:predicate<i>)
 stock Vec_FindFirst(Vec:vector, value)
 {
 	inline matchValue(val)
+	{
 		inline_return val == value;
+	}
 	return Vec_FindFirstBy(vector, using inline matchValue);
 }
 
@@ -368,7 +379,9 @@ stock Vec_FindLastBy(Vec:vector, Func:predicate<i>)
 stock Vec_FindLastElement(Vec:vector, value)
 {
 	inline matchValue(val)
+	{
 		inline_return val == value;
+	}
 	return Vec_FindLastBy(vector, using inline matchValue);
 }
 
@@ -393,16 +406,20 @@ stock Vec:Vec_FindAllBy(Vec:vector, Func:predicate<i>)
 stock Vec:Vec_FindAllElements(Vec:vector, value)
 {
 	inline matchValue(val)
+	{
 		inline_return val == value;
+	}
 	return Vec_FindAllBy(vector, using inline matchValue);
 }
 
 stock bool:Vec_TrueForAll(Vec:vector, Func:predicate<i>)
 {
-	VEC_FOREACH(new val : vector)
+	foreach(new val : Vector(vector))
 	{
 		if(!@.predicate(val))
+		{
 			return false;
+		}
 	}
 	return true;
 }
@@ -442,11 +459,17 @@ stock Vec_BinarySearch(Vec:vector, value)
 	inline compareValues(val)
 	{
 		if(val == value)
+		{
 			inline_return 0;
+		}
 		else if(val < value)
+		{
 			inline_return -1;
+		}
 		else
+		{
 			inline_return 1;
+		}
 	}
 	return Vec_BinarySearchBy(vector, using inline compareValues);
 }
@@ -585,7 +608,8 @@ stock E_VEC_ERROR:Vec_SortAt(Vec:unsorted, Func:Comparer<ii>, start = 0, end)
 }
 
 stock E_VEC_ERROR:Vec_Sort(Vec:unsorted, start = 0, end = 0) {
-    inline defaultComparer(value1, value2) {
+    inline defaultComparer(value1, value2)
+	{
         inline_return value1 <= value2 ? true : false;
     }
 	if(end == 0)
@@ -595,7 +619,7 @@ stock E_VEC_ERROR:Vec_Sort(Vec:unsorted, start = 0, end = 0) {
     return Vec_SortAt(unsorted, using inline defaultComparer, start, end);
 }
 
-stock Vec_Clone(Vec:toClone, bool:readOnly = false)
+stock Vec:Vec_Clone(Vec:toClone, bool:readOnly = false)
 {
 	new Vec:clonedVector = Vec_New(Vec_Capacity(toClone), Vec_IsOrdered(toClone), Vec_Growth(toClone));
 	if(clonedVector == INVALID_VECTOR)
