@@ -61,7 +61,6 @@ iterfunc stock Vector(&iterstate, cur, Vec:vector, start = 0, end = -1)
 
 #define INVALID_VECTOR			(Vec:NO_ALLOC)
 
-
 stock bool:Vec_IsOrdered(Vec:vector)
 {
 	return bool:(Malloc_Get(Alloc:vector, e_VEC_DATA_ATTRIBUTES) & _:e_VEC_FLAGS_IS_ORDERED);
@@ -342,7 +341,7 @@ stock E_VEC_ERROR:Vec_Clear(Vec:vector)
 {
 	if(Vec_IsReadOnly(vector))
 		return E_VEC_ERROR_READ_ONLY;
-	memset(Vec_GetAsArray(vector, 0), 0, Vec_Len(vector));
+	MemSet(Vec_GetAsArray(vector, 0), 0, Vec_Len(vector));
 	Vec_SetLen(vector, 0);
 	return E_VEC_ERROR_OK;
 }
